@@ -10,6 +10,10 @@
 # line, activated and checked to be the active window before each wheel notch. The mouse is read
 # but not grabbed (run_test.sh --mouse).
 #
+# With --species it checks the species names of the custom character menu instead (ui/jamp/
+# ingame_player2.menu, opened with ui_openmenu): it clicks the species button once per species and
+# grabs its name each time, until the list comes round to the first one again.
+#
 # Usage examples:
 #   all mods installed into a fresh throwaway home:
 #     ./mp_menu_check.sh
@@ -19,6 +23,8 @@
 #     ./mp_menu_check.sh --only ST_REY_V2.3,T_Anavader
 #   the contact sheet somewhere else:
 #     ./mp_menu_check.sh --sheet /tmp/models.jpg
+#   the custom character species names instead of the model grid:
+#     ./mp_menu_check.sh --species --home /tmp/ojk_menu --no-install
 #   print the commands instead of running them:
 #     ./mp_menu_check.sh --debug
 
@@ -43,14 +49,20 @@ GRID_CROP="808x291+40+135"              # the same rect in window pixels (x2, x1
 MENU_WAIT_S=16                          # the map load and the join menu
 MAX_PAGES=40
 RUN_WAIT_FRAMES=4800                    # cfg wait (60 fps) before quit: longer than the paging
+# --species: the species button of ingame_player2.menu (menu rect 105 40, item rect 161 52 150 16)
+SPECIES_POINT="341 100"                 # its middle in menu coordinates
+SPECIES_CROP="320x30+526+135"           # the button's text in window pixels (x2, x1.5)
+SPECIES_MENU="ingame_player2"
+SPECIES_WAIT_S=28                       # the map load, the cfg's waits and ui_openmenu
 
 usage() { sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
-home="" sheet="" debug=0 install_args=()
+home="" sheet="" debug=0 species=0 install_args=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--home)           home="$2"; shift 2 ;;
 		--sheet)          sheet="$2"; shift 2 ;;
+		--species)        species=1; shift ;;
 		--no-install)     install_args+=(--no-install); shift ;;
 		--only|--exclude) install_args+=("$1" "$2"); shift 2 ;;
 		-d|--debug)       debug=1; shift ;;
@@ -59,9 +71,16 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 [[ -n "$home" ]] || home="$(mktemp -d "${TMPDIR:-/tmp}/ojk_mpmenu.XXXXXX")"
-sheet="${sheet:-$home/mp_models.jpg}"
 pages="$home/menu_pages"
-cfg_cmds="set con_notifytime 0; devmap mp/duel1; wait $RUN_WAIT_FRAMES; quit"
+if [[ $species -eq 1 ]]; then
+	sheet="${sheet:-$home/mp_species.jpg}"
+	cfg_cmds="set con_notifytime 0; devmap mp/duel1; wait 600; team free; wait 120; togglemenu; wait 200; ui_openmenu $SPECIES_MENU; wait $RUN_WAIT_FRAMES; quit"
+	point="$SPECIES_POINT" crop="$SPECIES_CROP" button=1 tile="1x" geometry="320x30+2+2" menu_wait=$SPECIES_WAIT_S
+else
+	sheet="${sheet:-$home/mp_models.jpg}"
+	cfg_cmds="set con_notifytime 0; devmap mp/duel1; wait $RUN_WAIT_FRAMES; quit"
+	point="$GRID_POINT" crop="$GRID_CROP" button=5 tile="2x" geometry="404x146+2+2" menu_wait=$MENU_WAIT_S
+fi
 
 find_window() {
 	local id pid
@@ -86,15 +105,15 @@ point_menu() {
 	xdotool mousemove --window "$w" "$x" "$y"; sleep 0.3
 }
 
-print_header "MP player model menu check"
+print_header "MP player model menu check$([[ $species -eq 1 ]] && echo ' (species)')"
 print_key "home" "$home"
 if [[ $debug -eq 1 ]]; then
 	printf '%q ' "$SCRIPT_DIR/install_player_mods.sh" --dest "$home/base"; printf '\n'
 	printf '%q ' "$SCRIPT_DIR/run_test.sh" mp --home "$home" --no-install --mouse --exec "$cfg_cmds" --timeout 300; printf '&\n'
 	echo "# then, on the window titled 'OpenJK (MP)' whose process has $home on its command line, once it is active:"
-	echo "xdotool mousemove --window \$w $((WIN_W - 1)) $((WIN_H - 1)); xdotool mousemove --window \$w 0 0; xdotool mousemove --window \$w ${GRID_POINT% *} ${GRID_POINT#* }"
-	echo "for n in \$(seq -w 0 $MAX_PAGES); do import -window \$w $pages/page_\$n.png; xdotool click --window \$w 5; sleep 0.8; done  # until two pages match"
-	echo "montage -crop $GRID_CROP $pages/page_*.png -tile 2x -geometry 404x146+2+2 $(printf '%q' "$sheet")"
+	echo "xdotool mousemove --window \$w $((WIN_W - 1)) $((WIN_H - 1)); xdotool mousemove --window \$w 0 0; xdotool mousemove --window \$w ${point% *} ${point#* }"
+	echo "for n in \$(seq -w 0 $MAX_PAGES); do import -window \$w $pages/page_\$n.png; xdotool click --window \$w $button; sleep 0.8; done  # until a page repeats"
+	echo "montage -crop $crop $pages/page_*.png -tile $tile -geometry $geometry $(printf '%q' "$sheet")"
 	exit 0
 fi
 for tool in xdotool import montage; do command -v "$tool" > /dev/null || { print_err "needs $tool"; exit 1; }; done
@@ -111,23 +130,24 @@ w=""
 for _ in $(seq 1 240); do w="$(find_window || true)"; [[ -n "$w" ]] && break; sleep 0.5; done
 [[ -n "$w" ]] || { print_err "no game window found: no input sent"; wait "$runner" || true; exit 1; }
 print_key "window" "$w (verified: its process runs with this home)"
-sleep "$MENU_WAIT_S"
-point_menu "$w" ${GRID_POINT} || { wait "$runner" || true; exit 1; }
+sleep "$menu_wait"
+point_menu "$w" ${point} || { wait "$runner" || true; exit 1; }
 
-prev="" n=0
+prev="" first="" n=0
 while [[ $n -lt $MAX_PAGES ]]; do
 	page="$(printf '%s/page_%02d.png' "$pages" $n)"
 	find_window > /dev/null || { print_warn "the window is gone"; break; }
 	import -window "$w" "$page"
-	sum="$(convert "$page" -crop "$GRID_CROP" +repage -scale 25% rgb:- | md5sum | cut -d' ' -f1)"
-	if [[ "$sum" == "$prev" ]]; then rm -f "$page"; break; fi
+	sum="$(convert "$page" -crop "$crop" +repage -scale 25% rgb:- | md5sum | cut -d' ' -f1)"
+	if [[ "$sum" == "$prev" || "$sum" == "$first" ]]; then rm -f "$page"; break; fi
+	[[ -n "$first" || $species -eq 0 ]] || first="$sum"
 	prev="$sum"; n=$((n + 1))
 	is_active "$w" || { print_err "focus lost: no more input sent"; break; }
-	xdotool click --window "$w" 5
+	xdotool click --window "$w" "$button"
 	sleep 0.8
 done
 print_ok "$n page(s)"
 wait "$runner" || true
 grep -E "exited|status|timed" "$home/run.txt" || true
-montage -crop "$GRID_CROP" "$pages"/page_*.png -tile 2x -geometry 404x146+2+2 "$sheet"
+montage -crop "$crop" "$pages"/page_*.png -tile "$tile" -geometry "$geometry" "$sheet"
 print_key "sheet" "$sheet"
