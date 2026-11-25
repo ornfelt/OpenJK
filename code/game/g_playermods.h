@@ -22,6 +22,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+// the buffer for the .npc file name list (FS_GetFileList): stock JA's 2048 bytes held 146 names
+// with every player mod installed, so the 147th (the stock z-95.npc) was never loaded
+#define PLAYERMODS_NPC_LIST_SIZE	16384
+
 // repairs the braces of one compressed .npc file in place; returns the entries still open at its
 // end (0 or 1), which the caller closes with a '}'
 int G_RepairNPCBraces( char *text, const char *fileName );

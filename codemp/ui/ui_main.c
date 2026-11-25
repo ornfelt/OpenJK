@@ -9428,7 +9428,7 @@ static void UI_BuildQ3Model_List( void )
 {
 	int		numdirs;
 	int		numfiles;
-	char	dirlist[2048];
+	char	dirlist[Q3MODEL_DIR_LIST_SIZE]; // player mods: was 2048
 	char	filelist[2048];
 	char	skinname[64];
 	char*	dirptr;
@@ -9442,7 +9442,7 @@ static void UI_BuildQ3Model_List( void )
 	uiInfo.q3HeadCount = 0;
 
 	// iterate directory of all player models
-	numdirs = trap->FS_GetFileList("models/players", "/", dirlist, 2048 );
+	numdirs = trap->FS_GetFileList("models/players", "/", dirlist, sizeof( dirlist ) ); // player mods: sizeof
 	dirptr  = dirlist;
 	for (i=0; i<numdirs && uiInfo.q3HeadCount < MAX_Q3PLAYERMODELS; i++,dirptr+=dirlen+1)
 	{

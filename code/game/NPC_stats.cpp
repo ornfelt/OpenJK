@@ -4084,7 +4084,7 @@ void NPC_LoadParms( void )
 {
 	int			len, totallen, npcExtFNLen, fileCnt, i;
 	char		*buffer, *holdChar, *marker;
-	char		npcExtensionListBuf[2048];			//	The list of file names read in
+	char		npcExtensionListBuf[PLAYERMODS_NPC_LIST_SIZE];			//	The list of file names read in // player mods: was 2048
 
 	//gi.Printf( "Parsing ext_data/npcs/*.npc definitions\n" );
 

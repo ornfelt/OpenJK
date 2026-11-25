@@ -141,6 +141,7 @@ typedef struct playerInfo_s {
 #define MAX_DEMOS				2048 // 256
 #define MAX_MOVIES				2048 // 256
 #define MAX_Q3PLAYERMODELS		1024 //256
+#define Q3MODEL_DIR_LIST_SIZE	16384 // player mods: the models/players dir list of UI_BuildQ3Model_List (was 2048)
 
 #define DEMO_DIRECTORY "demos"
 #define DEMO_EXTENSION "dm_"
