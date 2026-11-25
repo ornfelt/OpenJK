@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "g_local.h"
 #include "bg_saga.h"
+#include "g_playerskel.h" // player mods
 #include "qcommon/q_shared.h"
 
 typedef struct shaderRemap_s {
@@ -205,7 +206,7 @@ qboolean G_PlayerHasCustomSkeleton(gentity_t *ent)
 
 	return qtrue;
 	*/
-	return qfalse;
+	return G_PlayerSkelCustom( ent ); // player mods: a model on a humanoid-compatible custom skeleton
 }
 
 /*

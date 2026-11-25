@@ -30,6 +30,7 @@ Ghoul2 Insert Start
 */
 #include "qcommon/q_shared.h"
 #include "ghoul2/G2.h"
+#include "game/bg_playerskel.h" // player mods
 /*
 Ghoul2 Insert end
 */
@@ -1094,7 +1095,7 @@ static void CG_General( centity_t *cent ) {
 			else if (cent->currentState.modelGhoul2 == G2_MODELPART_WAIST)
 			{
 
-				if (clEnt->localAnimIndex <= 1)
+				if (BG_HumanoidAnimIndex( clEnt->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 				{ //humanoid/rtrooper
 					rotateBone = "thoracic";
 				}
@@ -1181,7 +1182,7 @@ static void CG_General( centity_t *cent ) {
 					trap->G2API_RemoveGhoul2Model(&(clEnt->ghoul2), 3);
 				}
 
-				if (clEnt->localAnimIndex <= 0)
+				if (BG_HumanoidAnimIndex( clEnt->localAnimIndex ) <= 0) // player mods: a custom humanoid skeleton counts as humanoid
 				{ //humanoid
 					trap->G2API_SetBoneAngles(clEnt->ghoul2, 0, "model_root", vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, cgs.gameModels, 100, cg.time);
 					trap->G2API_SetBoneAngles(clEnt->ghoul2, 0, "pelvis", vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, cgs.gameModels, 0, cg.time);

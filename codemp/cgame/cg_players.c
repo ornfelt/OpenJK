@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "game/bg_saga.h"
 #include "cg_playermods.h" // player mods
 #include "cg_modelscale.h" // player mods
+#include "game/bg_playerskel.h" // player mods
 
 extern vmCvar_t	cg_thirdPersonAlpha;
 
@@ -447,6 +448,7 @@ static qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelN
 	char		afilename[MAX_QPATH];
 	char		/**GLAName,*/ *slash;
 	char		GLAName[MAX_QPATH];
+	qboolean	customSkel; // player mods
 	vec3_t	tempVec = {0,0,0};
 	qboolean badModel = qfalse;
 	char	surfOff[MAX_SURF_LIST_SIZE];
@@ -528,9 +530,11 @@ retryModel:
 	GLAName[0] = 0;
 
 	trap->G2API_GetGLAName( ci->ghoul2Model, 0, GLAName);
+	customSkel = BG_CustomHumanoidGLA( GLAName ); // player mods: a model on its own humanoid-compatible skeleton
 	if (GLAName[0] != 0)
 	{
-		if (!strstr(GLAName, "players/_humanoid/") /*&&
+		// player mods: !customSkel
+		if (!strstr(GLAName, "players/_humanoid/") && !customSkel /*&&
 			(!strstr(GLAName, "players/rockettrooper/") || cgs.gametype != GT_SIEGE)*/) //only allow rockettrooper in siege
 		{ //Bad!
 			badModel = qtrue;
@@ -557,7 +561,8 @@ retryModel:
 		}
 
 		//rww - All player models must use humanoid, no matter what.
-		if (Q_stricmp(afilename, "models/players/_humanoid/animation.cfg") /*&&
+		// player mods: a humanoid-compatible skeleton's own animation.cfg is loaded with its ghoul2 instance
+		if (Q_stricmp(afilename, "models/players/_humanoid/animation.cfg") && !customSkel /*&&
 			Q_stricmp(afilename, "models/players/rockettrooper/animation.cfg")*/)
 		{
 			Com_Printf( "Model does not use supported animation config.\n");
@@ -2824,7 +2829,7 @@ static void CG_SetLerpFrameAnimation( centity_t *cent, clientInfo_t *ci, lerpFra
 	int blendTime = 100;
 	float oldSpeed = lf->animationSpeed;
 
-	if (cent->localAnimIndex > 0)
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex ) > 0) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //rockettroopers can't have broken arms, nor can anything else but humanoids
 		ci->brokenLimbs = cent->currentState.brokenLimbs;
 	}
@@ -2842,7 +2847,7 @@ static void CG_SetLerpFrameAnimation( centity_t *cent, clientInfo_t *ci, lerpFra
 	lf->animation = anim;
 	lf->animationTime = lf->frameTime + abs(anim->frameLerp);
 
-	if (cent->localAnimIndex > 1 &&
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex ) > 1 && // player mods: a custom humanoid skeleton counts as humanoid
 		anim->firstFrame == 0 &&
 		anim->numFrames == 0)
 	{ //We'll allow this for non-humanoids.
@@ -3013,13 +3018,13 @@ static void CG_SetLerpFrameAnimation( centity_t *cent, clientInfo_t *ci, lerpFra
 			}
 		}
 
-		if (cent->localAnimIndex <= 1 && (cent->currentState.torsoAnim) == newAnimation && !cent->noLumbar)
+		if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1 && (cent->currentState.torsoAnim) == newAnimation && !cent->noLumbar) // player mods: a custom humanoid skeleton counts as humanoid
 		{ //make sure we're humanoid before we access the motion bone
 			trap->G2API_SetBoneAnim(cent->ghoul2, 0, "Motion", firstFrame, lastFrame, flags, animSpeed, cg.time, beginFrame, blendTime);
 		}
 
 #if 0 //disabled for now
-		if (cent->localAnimIndex <= 1 && cent->currentState.brokenLimbs &&
+		if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1 && cent->currentState.brokenLimbs && // player mods: a custom humanoid skeleton counts as humanoid
 			(cent->currentState.brokenLimbs & (1 << BROKENLIMB_LARM)))
 		{ //broken left arm
 			char *brokenBone = "lhumerus";
@@ -3044,7 +3049,7 @@ static void CG_SetLerpFrameAnimation( centity_t *cent, clientInfo_t *ci, lerpFra
 
 			trap->G2API_SetBoneAnim(cent->ghoul2, 0, brokenBone, armFirstFrame, armLastFrame, armFlags, armAnimSpeed, cg.time, -1, blendTime);
 		}
-		else if (cent->localAnimIndex <= 1 && cent->currentState.brokenLimbs &&
+		else if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1 && cent->currentState.brokenLimbs && // player mods: a custom humanoid skeleton counts as humanoid
 			(cent->currentState.brokenLimbs & (1 << BROKENLIMB_RARM)))
 		{ //broken right arm
 			char *brokenBone = "rhumerus";
@@ -3543,7 +3548,7 @@ qboolean CG_RagDoll(centity_t *cent, vec3_t forcedAngles)
 		return qfalse;
 	}
 
-	if (cent->localAnimIndex)
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex )) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //don't rag non-humanoids
 		return qfalse;
 	}
@@ -4111,7 +4116,7 @@ qboolean CG_G2PlayerHeadAnims( centity_t *cent )
 	int anim = -1;
 	int voiceVolume = 0;
 
-	if(cent->localAnimIndex > 1)
+	if(BG_HumanoidAnimIndex( cent->localAnimIndex ) > 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //only do this for humanoids
 		return qfalse;
 	}
@@ -4274,7 +4279,7 @@ static void CG_G2PlayerAngles( centity_t *cent, matrix3_t legs, vec3_t legsAngle
 	}
 
 	//rww - Quite possibly the most arguments for a function ever.
-	if (cent->localAnimIndex <= 1)
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //don't do these things on non-humanoids
 		vec3_t lookAngles;
 		entityState_t *emplaced = NULL;
@@ -5002,7 +5007,7 @@ static void CG_ForcePushBodyBlur( centity_t *cent )
 	int bolt;
 	int i;
 
-	if (cent->localAnimIndex > 1)
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex ) > 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //Sorry, the humanoid IS IN ANOTHER CASTLE.
 		return;
 	}
@@ -7569,7 +7574,7 @@ void CG_G2Animated( centity_t *cent )
 		CG_ReattachLimb(cent);
 	}
 
-	if (((cent->currentState.eFlags & EF_DEAD) || (cent->currentState.eFlags & EF_RAG)) && !cent->localAnimIndex)
+	if (((cent->currentState.eFlags & EF_DEAD) || (cent->currentState.eFlags & EF_RAG)) && !BG_HumanoidAnimIndex( cent->localAnimIndex )) // player mods: a custom humanoid skeleton counts as humanoid
 	{
 		vec3_t forcedAngles;
 
@@ -7766,7 +7771,7 @@ static void CG_ForceElectrocution( centity_t *cent, const vec3_t origin, vec3_t 
 
 	VectorSet(rgb, 1, 1, 1);
 
-	if (cent->localAnimIndex <= 1)
+	if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //humanoid
 		torsoBolt = trap->G2API_AddBolt(cent->ghoul2, 0, "lower_lumbar");
 		elbowLBolt = trap->G2API_AddBolt(cent->ghoul2, 0, "*l_arm_elbow");
@@ -8623,7 +8628,7 @@ void CG_Player( centity_t *cent ) {
 		if (cent->npcClient->ghoul2Model != cent->ghoul2 && cent->ghoul2)
 		{
 			cent->npcClient->ghoul2Model = cent->ghoul2;
-			if (cent->localAnimIndex <= 1)
+			if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 			{
 				cent->npcClient->bolt_rhand = trap->G2API_AddBolt(cent->npcClient->ghoul2Model, 0, "*r_hand");
 				cent->npcClient->bolt_lhand = trap->G2API_AddBolt(cent->npcClient->ghoul2Model, 0, "*l_hand");
@@ -10655,7 +10660,7 @@ stillDoSaber:
 		{
 			trap->G2API_SetBoneAnim(legs.ghoul2, 0, "lower_lumbar", cent->miscTime, cent->miscTime, BONE_ANIM_OVERRIDE_FREEZE, 1.0f, cg.time, cent->miscTime, -1);
 
-			if (cent->localAnimIndex <= 1)
+			if (BG_HumanoidAnimIndex( cent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 			{
 				trap->G2API_SetBoneAnim(legs.ghoul2, 0, "Motion", cent->miscTime, cent->miscTime, BONE_ANIM_OVERRIDE_FREEZE, 1.0f, cg.time, cent->miscTime, -1);
 			}

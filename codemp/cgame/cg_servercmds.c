@@ -32,6 +32,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ghoul2/G2.h"
 #include "ui/ui_public.h"
 #include "game/bg_modelscale.h" // player mods
+#include "game/bg_playerskel.h" // player mods
 
 /*
 =================
@@ -141,6 +142,7 @@ void CG_ParseServerinfo( void ) {
 	cgs.noSpecMove = atoi( Info_ValueForKey( info, "g_noSpecMove" ) );
 
 	cgs.modelScaleBBox = (qboolean)!!atoi( Info_ValueForKey( info, MODELSCALE_SERVERINFO_KEY ) ); // player mods
+	bgCustomSkeletons = (qboolean)!!atoi( Info_ValueForKey( info, PLAYERSKEL_SERVERINFO_KEY ) ); // player mods
 
 	cgs.siegeTeamSwitch = atoi( Info_ValueForKey( info, "g_siegeTeamSwitch" ) );
 
@@ -1000,6 +1002,7 @@ void CG_KillCEntityG2(int entNum)
 	cent->localAnimIndex = 0;
 }
 
+int CG_G2SkelForModel(void *g2); // player mods (cg_players.c)
 void CG_KillCEntityInstances(void)
 {
 	int i = 0;
@@ -1041,6 +1044,14 @@ void CG_KillCEntityInstances(void)
 		cent->numLoopingSounds = 0;
 
 		cent->localAnimIndex = 0;
+		if (i < MAX_CLIENTS && bgCustomSkeletons && cent->ghoul2 && trap->G2_HaveWeGhoul2Models(cent->ghoul2))
+		{ // player mods: a client's ghoul2 instance is kept, and may be on its own skeleton
+			cent->localAnimIndex = CG_G2SkelForModel(cent->ghoul2);
+			if (cent->localAnimIndex < 0)
+			{
+				cent->localAnimIndex = 0;
+			}
+		}
 
 		i++;
 	}

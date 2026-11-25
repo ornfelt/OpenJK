@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "game/bg_public.h"
 #include "qcommon/game_version.h"
 #include "g_modelscale.h" // player mods
+#include "g_playerskel.h" // player mods
 
 NORETURN_PTR void (*Com_Error)( int level, const char *error, ... );
 void (*Com_Printf)( const char *msg, ... );
@@ -298,6 +299,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	NPC_InitGame();
 
+	G_PlayerSkelInit(); // player mods: g_customSkeletons
 	G_ModelScaleInit(); // player mods: modelscale.cfg
 
 	TIMER_Clear();

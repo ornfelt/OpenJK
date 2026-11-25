@@ -24,6 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_nav.h"
 #include "anims.h"
 #include "w_saber.h"
+#include "bg_playerskel.h" // player mods
 
 extern void G_AddVoiceEvent( gentity_t *self, int event, int speakDebounceTime );
 extern void NPC_AimAdjust( int change );
@@ -850,7 +851,8 @@ void NPC_BSGM_Attack( void )
 			1 //rwwFIXMEFIXME: just act like the shield is down til the effects and stuff are done
 			&& enemyDist4 < MELEE_DIST_SQUARED
 			&& InFront( NPCS.NPC->enemy->r.currentOrigin, NPCS.NPC->r.currentOrigin, NPCS.NPC->client->ps.viewangles, 0.3f )
-			&& NPCS.NPC->enemy->localAnimIndex <= 1 )//within 80 and in front
+			// player mods: a custom humanoid skeleton counts as humanoid
+			&& BG_HumanoidAnimIndex( NPCS.NPC->enemy->localAnimIndex ) <= 1 )//within 80 and in front
 		{//our shield is down, and enemy within 80, if very close, use melee attack to slap away
 			if ( TIMER_Done( NPCS.NPC, "attackDelay" ) )
 			{

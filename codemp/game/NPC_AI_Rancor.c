@@ -21,6 +21,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "b_local.h"
+#include "bg_playerskel.h" // player mods
 
 extern void G_GetBoltPosition( gentity_t *self, int boltIndex, vec3_t pos, int modelIndex );
 
@@ -828,7 +829,7 @@ void Rancor_Crush(void)
 	}
 
 	crush = &g_entities[NPCS.NPC->client->ps.groundEntityNum];
-	if (crush->inuse && crush->client && !crush->localAnimIndex)
+	if (crush->inuse && crush->client && !BG_HumanoidAnimIndex( crush->localAnimIndex )) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //a humanoid, smash them good.
 		G_Damage(crush, NPCS.NPC, NPCS.NPC, NULL, NPCS.NPC->r.currentOrigin, 200, 0, MOD_CRUSH);
 	}

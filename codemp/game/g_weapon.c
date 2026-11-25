@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // perform the server side effects of a weapon firing
 
 #include "g_local.h"
+#include "bg_playerskel.h" // player mods
 #include "botlib/be_aas.h"
 #include "bg_saga.h"
 #include "ghoul2/G2.h"
@@ -3234,7 +3235,7 @@ static void WP_FireConcussionAlt( gentity_t *ent )
 						if ( traceEnt->health > 0 )
 						{//alive
 							//if ( G_HasKnockdownAnims( traceEnt ) )
-							if (!noKnockBack && !traceEnt->localAnimIndex && traceEnt->client->ps.forceHandExtend != HANDEXTEND_KNOCKDOWN &&
+							if (!noKnockBack && !BG_HumanoidAnimIndex( traceEnt->localAnimIndex ) && traceEnt->client->ps.forceHandExtend != HANDEXTEND_KNOCKDOWN && // player mods: a custom humanoid skeleton counts as humanoid
 								BG_KnockDownable(&traceEnt->client->ps)) //just check for humanoids..
 							{//knock-downable
 								//G_Knockdown( traceEnt, ent, pushDir, 400, qtrue );

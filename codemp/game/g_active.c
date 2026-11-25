@@ -24,6 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "g_local.h"
 #include "bg_saga.h"
+#include "bg_playerskel.h" // player mods
 
 extern void Jedi_Cloak( gentity_t *self );
 extern void Jedi_Decloak( gentity_t *self );
@@ -2852,7 +2853,7 @@ void ClientThink_real( gentity_t *ent ) {
 #endif
 	if (ent->ghoul2)
 	{
-		if (ent->localAnimIndex > 1)
+		if (BG_HumanoidAnimIndex( ent->localAnimIndex ) > 1) // player mods: a custom humanoid skeleton counts as humanoid
 		{ //if it isn't humanoid then we will be having none of this.
 			pmove.ghoul2 = NULL;
 		}
@@ -2892,7 +2893,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	pmove.noSpecMove = g_noSpecMove.integer;
 
-	pmove.nonHumanoid = (ent->localAnimIndex > 0);
+	pmove.nonHumanoid = (BG_HumanoidAnimIndex( ent->localAnimIndex ) > 0); // player mods: a custom humanoid skeleton counts as humanoid
 
 	VectorCopy( client->ps.origin, client->oldOrigin );
 

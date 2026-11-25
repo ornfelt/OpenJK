@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // It also handles local physics interaction, like fragments bouncing off walls
 
 #include "cg_local.h"
+#include "game/bg_playerskel.h" // player mods
 
 static	pmove_t		cg_pmove;
 
@@ -1248,7 +1249,7 @@ void CG_PredictPlayerState( void ) {
 		cg_pmove.noSpecMove = cgs.noSpecMove;
 		cg_pmove.modelScaleBBox = cgs.modelScaleBBox; // player mods: same bbox as the server
 
-		cg_pmove.nonHumanoid = (pEnt->localAnimIndex > 0);
+		cg_pmove.nonHumanoid = (BG_HumanoidAnimIndex( pEnt->localAnimIndex ) > 0); // player mods: a custom humanoid skeleton counts as humanoid
 
 		if (cg.snap && cg.snap->ps.saberLockTime > cg.time)
 		{

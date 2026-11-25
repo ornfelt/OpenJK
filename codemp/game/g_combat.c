@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "b_local.h"
 #include "bg_saga.h"
+#include "bg_playerskel.h" // player mods
 
 extern int G_ShipSurfaceForSurfName( const char *surfaceName );
 extern qboolean G_FlyVehicleDestroySurface( gentity_t *veh, int surface );
@@ -3183,7 +3184,7 @@ void G_GetDismemberBolt(gentity_t *self, vec3_t boltPoint, int limbType)
 		rotateBone = "cranium";
 		break;
 	case G2_MODELPART_WAIST:
-		if (self->localAnimIndex <= 1)
+		if (BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 		{ //humanoid
 			rotateBone = "thoracic";
 		}
@@ -3726,7 +3727,7 @@ qboolean G_GetHitLocFromSurfName( gentity_t *ent, const char *surfName, int *hit
 		return qfalse;
 	}
 
-	if (ent->localAnimIndex <= 1)
+	if (BG_HumanoidAnimIndex( ent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //humanoid
 		handLBolt = trap->G2API_AddBolt(ent->ghoul2, 0, "*l_hand");
 		handRBolt = trap->G2API_AddBolt(ent->ghoul2, 0, "*r_hand");
@@ -4152,7 +4153,7 @@ void G_CheckForDismemberment(gentity_t *ent, gentity_t *enemy, vec3_t point, int
 	vec3_t boltPoint;
 	int dismember = g_dismember.integer;
 
-	if (ent->localAnimIndex > 1)
+	if (BG_HumanoidAnimIndex( ent->localAnimIndex ) > 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{
 		if (!ent->NPC)
 		{

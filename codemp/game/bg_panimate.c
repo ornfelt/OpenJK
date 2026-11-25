@@ -28,6 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_local.h"
 #include "anims.h"
 #include "cgame/animtable.h"
+#include "bg_playerskel.h" // player mods
 
 #ifdef _GAME
 	#include "g_local.h"
@@ -2521,6 +2522,7 @@ int BG_ParseAnimationFile(const char *filename, animation_t *animset, qboolean i
 
 		if (nextIndex > 1)
 		{ //don't bother increasing the number if this ended up as a humanoid/rockettrooper load.
+			BG_PlayerSkelAnimSetLoaded( nextIndex, filename ); // player mods: a humanoid-compatible skeleton?
 			bgNumAllAnims++;
 		}
 		else

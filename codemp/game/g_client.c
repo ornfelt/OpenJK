@@ -24,6 +24,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "g_local.h"
 #include "g_modelscale.h" // player mods
+#include "g_playerskel.h" // player mods
 #include "ghoul2/G2.h"
 #include "bg_saga.h"
 
@@ -2175,6 +2176,10 @@ qboolean ClientUserinfoChanged( int clientNum ) {
 		modelChanged = qtrue;
 	}
 
+	if ( G_PlayerSkelUserinfoChanged( ent, model ) ) { // player mods: a model on its own skeleton
+		modelChanged = qtrue;
+	}
+
 	client->ps.customRGBA[0] = (value=Info_ValueForKey( userinfo, "char_color_red" ))	? Com_Clampi( 0, 255, atoi( value ) ) : 255;
 	client->ps.customRGBA[1] = (value=Info_ValueForKey( userinfo, "char_color_green" ))	? Com_Clampi( 0, 255, atoi( value ) ) : 255;
 	client->ps.customRGBA[2] = (value=Info_ValueForKey( userinfo, "char_color_blue" ))	? Com_Clampi( 0, 255, atoi( value ) ) : 255;
@@ -2776,7 +2781,7 @@ void G_BreakArm(gentity_t *ent, int arm)
 
 	assert(ent && ent->client);
 
-	if (ent->s.NPC_class == CLASS_VEHICLE || ent->localAnimIndex > 1)
+	if (ent->s.NPC_class == CLASS_VEHICLE || BG_HumanoidAnimIndex( ent->localAnimIndex ) > 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //no broken limbs for vehicles and non-humanoids
 		return;
 	}
@@ -2854,7 +2859,7 @@ void G_UpdateClientAnims(gentity_t *self, float animSpeedScale)
 		return;
 	}
 
-	if (self->localAnimIndex > 1 &&
+	if (BG_HumanoidAnimIndex( self->localAnimIndex ) > 1 && // player mods: a custom humanoid skeleton counts as humanoid
 		bgAllAnims[self->localAnimIndex].anims[legsAnim].firstFrame == 0 &&
 		bgAllAnims[self->localAnimIndex].anims[legsAnim].numFrames == 0)
 	{ //We'll allow this for non-humanoids.
@@ -2894,7 +2899,7 @@ void G_UpdateClientAnims(gentity_t *self, float animSpeedScale)
 	}
 
 tryTorso:
-	if (self->localAnimIndex > 1 &&
+	if (BG_HumanoidAnimIndex( self->localAnimIndex ) > 1 && // player mods: a custom humanoid skeleton counts as humanoid
 		bgAllAnims[self->localAnimIndex].anims[torsoAnim].firstFrame == 0 &&
 		bgAllAnims[self->localAnimIndex].anims[torsoAnim].numFrames == 0)
 
@@ -2951,7 +2956,7 @@ tryTorso:
 	}
 
 	if (setTorso &&
-		self->localAnimIndex <= 1)
+		BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //only set the motion bone for humanoids.
 		trap->G2API_SetBoneAnim(self->ghoul2, 0, "Motion", firstFrame, lastFrame, aFlags, lAnimSpeedScale, level.time, -1, 150);
 	}
@@ -2960,7 +2965,7 @@ tryTorso:
 	if (self->client->ps.brokenLimbs != self->client->brokenLimbs ||
 		setTorso)
 	{
-		if (self->localAnimIndex <= 1 && self->client->ps.brokenLimbs &&
+		if (BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1 && self->client->ps.brokenLimbs && // player mods: a custom humanoid skeleton counts as humanoid
 			(self->client->ps.brokenLimbs & (1 << BROKENLIMB_LARM)))
 		{ //broken left arm
 			char *brokenBone = "lhumerus";
@@ -2980,7 +2985,7 @@ tryTorso:
 
 			trap->G2API_SetBoneAnim(self->ghoul2, 0, brokenBone, armFirstFrame, armLastFrame, armFlags, armAnimSpeed, level.time, -1, 150);
 		}
-		else if (self->localAnimIndex <= 1 && self->client->ps.brokenLimbs &&
+		else if (BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1 && self->client->ps.brokenLimbs && // player mods: a custom humanoid skeleton counts as humanoid
 			(self->client->ps.brokenLimbs & (1 << BROKENLIMB_RARM)))
 		{ //broken right arm
 			char *brokenBone = "rhumerus";
@@ -3910,6 +3915,7 @@ void ClientDisconnect( int clientNum ) {
 	G_RemoveQueuedBotBegin( clientNum );
 
 	G_ModelScaleClientReset( clientNum ); // player mods: forget its /modelscale
+	G_PlayerSkelClientReset( clientNum ); // player mods: forget its skeleton
 
 	ent = g_entities + clientNum;
 	if ( !ent->client || ent->client->pers.connected == CON_DISCONNECTED ) {

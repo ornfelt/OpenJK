@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ai_main.h"
 #include "ghoul2/G2.h"
 #include "g_modelscale.h" // player mods
+#include "bg_playerskel.h" // player mods
 
 #define SABER_BOX_SIZE 16.0f
 extern bot_state_t *botstates[MAX_CLIENTS];
@@ -936,7 +937,7 @@ static QINLINE void G_G2PlayerAngles( gentity_t *ent, matrix3_t legs, vec3_t leg
 	VectorCopy(ent->client->ps.origin, lerpOrg);
 	VectorCopy(ent->client->ps.viewangles, lerpAng);
 
-	if (ent->localAnimIndex <= 1)
+	if (BG_HumanoidAnimIndex( ent->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //don't do these things on non-humanoids
 		vec3_t lookAngles;
 		entityState_t *emplaced = NULL;
@@ -5779,7 +5780,7 @@ void WP_SaberStartMissileBlockCheck( gentity_t *self, usercmd_t *ucmd  )
 		}
 	}
 
-	if (self->s.eType == ET_NPC && self->localAnimIndex <= 1)
+	if (self->s.eType == ET_NPC && BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 	{ //humanoid NPCs don't set angles based on server angles for looking, unlike other NPCs
 		if (self->client && self->client->renderInfo.lookTarget < ENTITYNUM_WORLD)
 		{
@@ -7365,7 +7366,7 @@ void UpdateClientRenderinfo(gentity_t *self, vec3_t renderOrigin, vec3_t renderA
 			//rwwFIXMEFIXME: Base on skeleton used? Assuming humanoid currently.
 			ri->lastG2 = self->ghoul2;
 
-			if (self->localAnimIndex <= 1)
+			if (BG_HumanoidAnimIndex( self->localAnimIndex ) <= 1) // player mods: a custom humanoid skeleton counts as humanoid
 			{
 				ri->headBolt = trap->G2API_AddBolt(self->ghoul2, 0, "*head_eyes");
 				ri->handRBolt = trap->G2API_AddBolt(self->ghoul2, 0, "*r_hand");

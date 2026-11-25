@@ -29,6 +29,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_local.h"
 #include "ghoul2/G2.h"
 #include "bg_modelscale.h" // player mods
+#include "bg_playerskel.h" // player mods
 
 #ifdef _GAME
 	#include "g_local.h"
@@ -6686,7 +6687,7 @@ static void PM_Weapon( void )
 	{ //npc with no weapon
 		gentity_t *gent = (gentity_t *)pm_entSelf;
 		if (gent->inuse && gent->client &&
-			!gent->localAnimIndex)
+			!BG_HumanoidAnimIndex( gent->localAnimIndex )) // player mods: a custom humanoid skeleton counts as humanoid
 		{ //humanoid
 			pm->ps->torsoAnim = pm->ps->legsAnim;
 			pm->ps->torsoTimer = pm->ps->legsTimer;
