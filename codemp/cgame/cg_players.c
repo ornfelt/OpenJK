@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "cg_local.h"
 #include "ghoul2/G2.h"
 #include "game/bg_saga.h"
+#include "cg_playermods.h" // player mods
 
 extern vmCvar_t	cg_thirdPersonAlpha;
 
@@ -860,6 +861,7 @@ void CG_LoadCISounds(clientInfo_t *ci, qboolean modelloaded)
 	{
 		trap->FS_Read(soundpath, fLen, f);
 		soundpath[fLen] = 0;
+		CG_PickSoundsCfgDir( soundpath ); // player mods: a mod's extra first line must not become the sound dir
 
 		i = fLen;
 
