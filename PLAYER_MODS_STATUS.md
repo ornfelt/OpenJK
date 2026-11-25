@@ -6,35 +6,37 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-25 (run 1, Linux): step 0 (setup) done, step 1 (baseline) done except the menu columns,
-step 2 started with its first fix.
+2026-11-25 (run 2, Linux): step 2 done; the step 1 menu columns filled.
 
-- Configured and built the fork in `build/` (RelWithDebInfo, Ninja): every target builds,
-  302 pre-existing warnings (kept in `build/warnings_baseline.txt`, gitignored, to spot new ones;
-  the run's changes add none).
-- `tools/player_mods/`: `inventory.py`, `player_mods.conf`, `install_player_mods.sh` / `.ps1`,
-  `run_test.sh` / `.ps1`, `log_report.py` (see Tools).
-- Baseline with the unchanged build: MP dedicated (every mod bot joins), MP client (every model and
-  skin, screenshots), MP npcs (only 55 of 76 spawn), SP npcs + playermodel (hung at the first
-  `playermodel`). Cause of both: Seven's `quigon.npc` (see Decisions).
-- Step 2, fix 1: `.npc` brace repair in both games (`g_playermods.c` / `.cpp`) and the end of the
-  SP `playermodel` fallback recursion. After it: 75 of 76 mod npcs spawn in MP and SP and work as
-  SP `playermodel` (`babyyoda` is the BabyYoda / YodaVM clash); no mods: unchanged, no warning.
+- Override pk3 for the clashes (the user's choice): recipes in `tools/player_mods/override/`
+  (`babyyoda`, `dindjarin_gp`, `kylo_bots`), `build_overrides.py` builds
+  `~playermods_overrides.pk3` from the mods' own files, the install scripts install it with the
+  manifest. Tested in MP and SP: Grogu and GustavoPredador's Din show next to YodaVM's Yoda and
+  themando's Din, both npcs spawn, the three Kylo bots join under their own names on their real
+  models, "Baby Yoda" bot joins.
+- SP and MP engines merge every pk3's copy of a string file (`FS_ForEachFileCopy` + `SE_Load`), and
+  the species list falls back to the dir name: the SP character menu names all 18 species
+  (`sp_menu_check.sh`).
+- MP renderers (rd-vanilla, rd-rend2) blank a stray `}` in a shader file instead of dropping the
+  file (SWTOR Revan's shaders load); MP cgame takes the one-word line of a `sounds.cfg` as the sound
+  dir (themando's Din has its sounds).
+- `mp_menu_check.sh` pages the MP player model grid: every mod model with icons is listed.
+- No new warnings (full build diffed against `build/warnings_baseline.txt`); no mods: SP, MP
+  (rd-vanilla, rd-rend2) start, load a map and quit as before.
 
 ## Next
 
-1. The clash overrides the user chose (Decisions): the install script builds override pk3s from
-   recipes in `tools/player_mods/override/` - BabyYoda's model as `babyyoda`, DinDjarin's as
-   `dindjarin_gp` (skins and npc entries rewritten), one `.bot` naming the three Kylo bots
-   distinctly on their real models. Recipes only, never mod files in the repo; built into
-   `base/` and recorded in the manifest like the pk3s.
-2. Step 2 continued: the SP `MENUS.str` merge (every pk3's copy of a string file merged, later
-   entries winning per key, so all the `JEDI_*` character menu names survive); then the tolerant
-   loaders worth doing: SWTOR Revan's shader file (one stray `}` rejects the whole file in
-   OpenJK), themando's `sounds.cfg` (first token only). Re-run the affected cells.
-3. The visual npc checks (`--test-cfg mp-npcs|sp-npcs --shots`, the cfgs now look past the
-   player) and the menu columns (step 7 work, but the baseline wants them: MP player model menu
-   lists, SP character creation species).
+1. Step 3, MP model scale - game: `bg_modelscale.c` (the `modelscale.cfg` parser, JA++'s
+   format), `g_modelscale.c` (cvars, table, `/modelscale`, rcon `modelscale` / `modelscales`),
+   applied in `ClientSpawn` / `ClientUserinfoChanged`: `s.iModelScale`, `ps.iModelScale`,
+   `ent->modelScale`, bbox and view heights; bots and npcs by the same precedence. Read JA++'s
+   `lua/sv/modelscale/plugin.lua`, `Entity_Scale` and `cg_players.cpp` first. The default
+   `modelscale.cfg` goes in `tools/player_mods/base/` (the install script already copies that dir).
+2. Small leftovers, when convenient: the SP `playermodel` T-pose (see Other findings), Revan's ghost
+   skins (translucency), the MP npc screenshots (the player hides small npcs - spawn further or
+   use `cg_thirdPersonRange`), the MP custom-character species names (merge in MP not seen on
+   screen yet), `inventory.py` knowing the override recipes (it still reports the clashes it finds
+   in the mods themselves).
 
 ## Waiting for the user
 
@@ -45,8 +47,8 @@ Nothing (the run 1 questions were answered on 2026-11-25, see Decisions).
 | # | Step | Status |
 | --- | --- | --- |
 | 0 | Setup: ledger, build, inventory, install script, mod table | done |
-| 1 | Baseline matrix with the unchanged build | done except the menu columns and the npc screenshots (see Next) |
-| 2 | Loading fixes (limits, SP string merge, conflicts, ...) | in progress: done - `.npc` brace repair (MP, SP), SP playermodel recursion; left - MENUS.str merge, the clashes (user), Revan shader, themando sounds.cfg |
+| 1 | Baseline matrix with the unchanged build | done (the MP npc screenshots are a leftover, see Next) |
+| 2 | Loading fixes (limits, SP string merge, conflicts, ...) | done: `.npc` brace repair, SP playermodel recursion, string file merge + species fallback, override pk3 for the clashes, MP shader stray brace, MP `sounds.cfg` |
 | 3 | MP model scale - game | todo |
 | 4 | MP model scale - cgame and ui | todo |
 | 5 | SP model scale | todo |
@@ -100,6 +102,13 @@ prints the equivalent shell commands.
   extension probes and minus a `--baseline` log. `.ps1` untested.
 - `log_report.py`: per `@@` check the new error lines; `--sheets <dir>` labelled contact sheets of
   the screenshots (ImageMagick `montage`).
+- `build_overrides.py` + `override/*.recipe`: the override pk3 for mod clashes (see Decisions);
+  recipe keywords `needs`, `from`, `rename`, `copy`, `set`, `file`; `--list`, `--mods`.
+- `sp_menu_check.sh` / `mp_menu_check.sh`: the SP character menu species names and the MP player
+  model grid on one contact sheet each. GUI input (two clicks in SP, wheel notches in MP) goes only
+  to the game window, verified by title, by its process holding the throwaway home and by being the
+  active window before each input; `run_test.sh --mouse` reads the mouse without grabbing it. Linux
+  only (xdotool, ImageMagick); no `.ps1` twins - on Windows the menus are checked by hand.
 
 Testing notes (learned the hard way):
 
@@ -186,6 +195,11 @@ Readme claims and choices:
 Cells: `ok`, `broken: <what>`, `n/a` (the mod does not support it), `todo` (not checked yet).
 Checked on Linux, 2026-11-25, with the unchanged build (fork `0eb6dfb7`) and all mods installed.
 
+Fixes referred to: fix1 `.npc` brace repair (run 1), fix2 string file merge + species name fallback,
+fix3 stray `}` in MP shader files, fix4 `sounds.cfg` sound dir (run 2); "override" = the override pk3.
+"ok (listed)" in MP menu: the model's icons are in the MP player model grid (`mp_menu_check.sh`
+contact sheet, 2026-11-25; the run lost focus after 14 pages, all mod pages were covered).
+
 Columns: SP playermodel (`playermodel <npc>`), SP menu (character creation), SP npc
 (`npc spawn`), MP model (`model <m>/<skin>`, every skin, screenshots), MP menu, MP bot (`addbot`,
 dedicated server), MP npc (`npc spawn`), saber, sounds. "fix1" = with this run's `.npc` brace
@@ -196,32 +210,32 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 
 | Mod | SP playermodel | SP menu | SP npc | MP model | MP menu | MP bot | MP npc | Saber | Sounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ashuras_clones | ok (fix1) | n/a | ok (fix1) | ok, 4 skins | todo | ok | ok (fix1) | stock | broken: no `sounds.cfg` (generic sounds) |
-| BabyYoda | broken: `babyyoda` npc hidden (YodaVM's `yodavm.npc` wins) | n/a | broken: same | broken: its `models/players/yodavm/` glm / skin / icon lose to YodaVM.pk3 - shows YodaVM's Yoda | todo | = yodavm's (same names, YodaVM's files win) | broken: `babyyoda` not found | its `yoda.sab` = YodaVM's | - |
-| darth_sidious | ok (fix1) | n/a | ok (fix1) | ok, 2 skins | todo | n/a (no `.bot`, readme says bots) | ok (fix1) | stock | ok |
-| DinDjarin | shows themando's model | n/a | ok (fix1), themando's model | broken: `dindjarin/` glm / skin / sounds lose to themando | todo | n/a | ok (fix1) | n/a | = themando's |
-| DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | todo | ok | ok (fix1) | todo | ok |
-| DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | todo | ok | ok (fix1) | stock | ok |
-| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins (no scale: human size) | todo | ok | ok (fix1) | todo | ok |
-| hs_anakin | ok (fix1) | todo: `JEDI_ANAKIN` key lost (MENUS.str) | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons) | todo | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
-| hs_dookuja | ok (fix1) | n/a | ok (fix1) | ok, 5 skins | todo | ok | ok (fix1) | ok (`.sab` typos `saberOn`, `munberBlades` ignored) | ok |
-| hs_kenobi_rots | ok (fix1) | todo: `JEDI_KENOBI` key lost | ok (fix1) | ok, 6 skins (`jedi_kenobi` untextured if forced) | todo | ok | ok (fix1) | ok (same `.sab` typos) | ok |
-| KyloRenTFAUpdated | ok (fix1) | todo | ok (fix1) | ok | todo | broken: bot model `KyloRen_Hood` does not exist (Kyle) | ok | broken: `sith_unstable` not installed (needs jkhub 2218) | partial set |
-| kyloV.1.02 | ok (fix1) | todo | ok (fix1) | ok, 4 skins | todo | broken: its `kylo.bot` replaced by KyloRenTFAUpdated's | ok (fix1) | broken: `ren` not installed (DarthMartyr's saber) | partial set |
-| PSKDarthMalgus | ok (fix1) | todo | ok (fix1) | ok | todo | ok | ok (fix1) | broken: npc saber `malgus`, the `.sab` defines `darth_malgus`; hilt menu entry has no string | ok |
-| Seven-Qui-Gon_Jinn | ok (fix1) | n/a | ok (fix1) - its `quigon.npc` was the cause | ok, 7 skins | todo | n/a | ok | ok | ok |
-| ST_Finn_Poe_V2.1 | ok (fix1) | todo: `JEDI_ST_*` keys lost | ok (fix1) | ok, 10 skins (`jedi_st_*` untextured if forced) | todo | ok | ok | stock | ok |
-| ST_REY_V2.3 | ok (fix1) | todo: keys lost | ok (fix1) | ok, 6 skins | todo | ok | ok | stock | ok |
-| SWTORRevanV1-04 | ok (fix1) | todo | ok (fix1) | ok, 15 skins, but `swtorrevan.shader` is rejected (unbalanced `}` at line 392): its shader effects are lost | todo | ok | ok | broken: npc saber `revan` not defined | partial set |
-| T_Anavader | ok (fix1) | todo: `JEDI_ANAKINT` / `JEDI_VADER` keys lost | ok (fix1) | ok, 12 skins | todo | ok | ok | ok | ok |
-| T_luke_rotj_V2 | ok (fix1) | todo (its MENUS.str is the one that wins; `jedi_luke/PlayerChoice.txt` has parse errors in the MP UI) | ok (fix1) | ok, 9 skins | todo | ok | ok | ok | ok |
-| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok but human size; `t_yoda` (SP glm, own `.gla`): Kyle | todo | ok | ok | todo | ok |
-| themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | todo | ok | ok | n/a | broken: `sounds.cfg` starts with `breathes "0"`, MP takes that line as the sound dir |
-| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins (human size) | todo | ok | ok | todo | ok |
-| yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee` (human size) | todo | ok | ok | ok | ok |
-| zKyloRenKv2 | ok (fix1) | n/a | ok (fix1) | ok | todo | ok | ok | broken: `kylo_ren` not installed (needs jkhub 2214) | ok |
-| ZZ- Luke Skywalker Trainer v1.5 | ok (fix1), 3 skins | n/a | ok (fix1) | ok, 3 skins | todo | n/a | ok | stock | ok |
-| zzJTempleGv3 | ok (fix1) | n/a | ok (fix1) | ok | todo | n/a | ok | ok | ok |
+| ashuras_clones | ok (fix1) | n/a | ok (fix1) | ok, 4 skins | ok (listed) | ok | ok (fix1) | stock | broken: no `sounds.cfg` (generic sounds) |
+| BabyYoda | ok via override: `babyyoda`, npc scale 37 | n/a | ok via override | ok via override: `babyyoda` (Grogu); `yodavm` stays YodaVM's | ok (listed) | ok via override: "Baby Yoda" | ok via override (log) | its `yoda.sab` = YodaVM's | = yodavm's |
+| darth_sidious | ok (fix1) | n/a | ok (fix1) | ok, 2 skins | ok (listed) | n/a (no `.bot`, readme says bots) | ok (fix1) | stock | ok |
+| DinDjarin | ok via override: `dindjarin_gp` | n/a | ok via override | ok via override: `dindjarin_gp` (GustavoPredador's, caped) | ok (listed) | n/a | ok via override (log) | n/a | ok (`boba`) |
+| DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | todo | ok |
+| DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | stock | ok |
+| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins (no scale: human size) | ok (listed) | ok | ok (fix1) | todo | ok |
+| hs_anakin | ok (fix1) | ok (fix2): "Anakin Skywalker" | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons: not in the menu) | ok (listed) | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
+| hs_dookuja | ok (fix1) | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (`.sab` typos `saberOn`, `munberBlades` ignored) | ok |
+| hs_kenobi_rots | ok (fix1) | ok (fix2): "Obi-Wan Kenobi" | ok (fix1) | ok, 6 skins (`jedi_kenobi` untextured if forced) | ok (listed) | ok | ok (fix1) | ok (same `.sab` typos) | ok |
+| KyloRenTFAUpdated | ok (fix1) | ok (fix2): "kylo_ren" (dir name, the mod has no MENUS entry) | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren TFA" on `kylo_ren` | ok | broken: `sith_unstable` not installed (needs jkhub 2218) | partial set |
+| kyloV.1.02 | ok (fix1) | ok (fix2): "kylo" (dir name) | ok (fix1) | ok, 4 skins | ok (listed) | ok via override: "Kylo Ren" on `Kylo` | ok (fix1) | broken: `ren` not installed (DarthMartyr's saber) | partial set |
+| PSKDarthMalgus | ok (fix1) | ok (fix2): "psdarthmalgus" (dir name) | ok (fix1) | ok | ok (listed) | ok | ok (fix1) | broken: npc saber `malgus`, the `.sab` defines `darth_malgus`; hilt menu entry has no string | ok |
+| Seven-Qui-Gon_Jinn | ok (fix1) | n/a | ok (fix1) - its `quigon.npc` was the cause | ok, 7 skins | ok (listed) | n/a | ok | ok | ok |
+| ST_Finn_Poe_V2.1 | ok (fix1) | ok (fix2): "Finn", "Poe Dameron" | ok (fix1) | ok, 10 skins (`jedi_st_*` untextured if forced) | ok (listed) | ok | ok | stock | ok |
+| ST_REY_V2.3 | ok (fix1) | ok (fix2): "Rey" | ok (fix1) | ok, 6 skins | ok (listed) | ok | ok | stock | ok |
+| SWTORRevanV1-04 | ok (fix1) | ok (fix2): "swtorrevan" (dir name) | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
+| T_Anavader | ok (fix1) | ok (fix2): "Anakin Skywalker", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
+| T_luke_rotj_V2 | ok (fix1) | ok (fix2): "Luke ROTJ" | ok (fix1) | ok, 9 skins | ok (listed) | ok | ok | ok | ok |
+| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok but human size; `t_yoda` (SP glm, own `.gla`): Kyle | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
+| themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok | ok | n/a | ok since fix4 (`sound/chars/themando`) |
+| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins (human size) | ok (listed) | ok | ok | todo | ok |
+| yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee` (human size) | ok (listed) | ok | ok | ok | ok |
+| zKyloRenKv2 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren K" | ok | broken: `kylo_ren` not installed (needs jkhub 2214) | ok |
+| ZZ- Luke Skywalker Trainer v1.5 | ok (fix1), 3 skins | n/a | ok (fix1) | ok, 3 skins | ok (listed) | n/a | ok | stock | ok |
+| zzJTempleGv3 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | n/a | ok | ok | ok |
 
 Other findings:
 
@@ -231,6 +245,8 @@ Other findings:
   the SP configstring layout (savegames) - only after asking.
 - MP shows every skin of every model; the Yodas, Grievous and Vader are human size (no scaling in
   MP yet - steps 3-4).
+- MP: the custom character species list (the MP UI's "Custom" model) gets the same names merge
+  and fallback, not seen on screen yet.
 - SP `playermodel`: several shots taken ~1.7 s after the switch show the new model in a T-pose
   (greeveevm, DT_StormTrooper_EP7, st_rey_scavenger, T_vader*, Luke_robeup / robedn / bobble,
   KyloRenK, JediTempleGuard) while other npcs of the same model animate. Timing or a missing
@@ -260,6 +276,17 @@ Not measured yet (step 8). Starting points, not approved:
 
 ## Decisions
 
+- The override pk3 is named `~playermods_overrides.pk3`: `FS_PathCmp` folds letters to upper
+  case, so `_` (0x5F) beats `z`; only a leading `~` sorts after every mod pk3 (`zzzzzz_themando`,
+  `zz_EPVII_...`). One pk3 for all recipes; a recipe applies only when all its mods are installed.
+  Both kylo bots use `botfiles/kylo.jkb`, which KyloRenTFAUpdated wins (personality only).
+- String files (run 2): every pk3's copy is merged, lower priority first, so the top copy still wins
+  per key; done in SP and MP (`FS_ForEachFileCopy` in each `files.cpp`, the MP one skipping pk3s a
+  pure server forbids). A species without a `MENUS_<SPECIES>` string shows its dir name.
+- Shader files (run 2, MP renderers only): a `}` where a shader name is expected is blanked with a
+  warning; anything else wrong still drops the file (OpenJK's existing check). rdsp-vanilla has no
+  check (retail behaviour: Revan's `cape` shader is eaten there) - left as is.
+- `sounds.cfg` (run 2, MP cgame): the first one-word line longer than one letter is the sound dir.
 - Mod clashes (the user, 2026-11-25): **override pk3s**, built by the install script from the mods'
   own files and a committed recipe, for BabyYoda vs YodaVM (BabyYoda's model renamed `babyyoda`)
   and DinDjarin vs themando_doughnuts (DinDjarin's renamed, e.g. `dindjarin_gp`); a committed
@@ -301,4 +328,23 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   (`code/game/NPC_stats.cpp`), and in `G_ChangePlayerModel` (`code/game/g_client.cpp`) the
   stormtrooper fallback only when the name is not already `stormtrooper`.
 - `8e9ed33c` `[Tools] player mods: status ledger` - `PLAYER_MODS_STATUS.md` only.
-- (this commit) `[Tools] player mods: ledger - the user's decisions` - `PLAYER_MODS_STATUS.md` only.
+- `7be9c02d` `[Tools] player mods: ledger - the user's decisions` - `PLAYER_MODS_STATUS.md` only.
+- `7dc9bb1b` `[Tools] player mods: override pk3 for mod clashes, SP menu check` - `tools/player_mods/`
+  only (`build_overrides.py`, `override/`, `sp_menu_check.sh`, install scripts, `run_test.sh
+  --mouse`); nothing to port.
+- `9274d046` `[SP] player mods: merge every pk3's copy of a string file` - `code/qcommon/files.cpp`
+  (new `FS_ForEachFileCopy`: walk `fs_searchpaths`, collect pak / dir matches, call back
+  lowest priority first, optionally skipping the top one; data 0-terminated), `qcommon.h`
+  prototype, `stringed_ingame.cpp` (`SE_ParseLoadedData` split out of `SE_Load_Actual`,
+  `SE_MergeCopy` callback, `SE_Load` merges lower copies first), `code/ui/ui_shared.cpp`
+  (species name falls back to the dir name when `SE_GetString` returns "").
+- `d06b5fc8` `[MP] player mods: merge every pk3's copy of a string file` - the same in
+  `codemp/qcommon/files.cpp` (plus `FS_PakIsPure` skip), `qcommon.h`, `stringed_ingame.cpp`,
+  `codemp/ui/ui_shared.c` (fallback through `trap->SE_GetStringTextString`).
+- `0dfe223c` `[MP] player mods: a stray '}' no longer drops a whole shader file` -
+  `ScanAndLoadShaderFiles` in `codemp/rd-vanilla/tr_shader.cpp` and `codemp/rd-rend2/tr_shader.cpp`:
+  a `}` token where a shader name is expected is overwritten with a space, warning, continue.
+- `4909f4cc` `[MP] player mods: tolerate an extra first line in sounds.cfg` - new
+  `codemp/cgame/cg_playermods.c` / `.h` (`CG_PickSoundsCfgDir`), one call in `CG_LoadCISounds`
+  (`cg_players.c`) right after reading the file; cgame CMake list.
+- (this commit) `[Tools] player mods: ledger, run 2` - `PLAYER_MODS_STATUS.md`, `mp_menu_check.sh`.
