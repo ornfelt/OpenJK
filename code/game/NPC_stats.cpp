@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "wp_saber.h"
 #include "g_vehicles.h"
 #include "../cgame/cg_local.h"
+#include "g_playermods.h" // player mods
 #if !defined(RUFL_HSTRING_INC)
 	#include "../Rufl/hstring.h"
 #endif
@@ -4115,11 +4116,17 @@ void NPC_LoadParms( void )
 				marker++;
 			}
 			len = COM_Compress( buffer );
+			// player mods: a mod's unbalanced .npc file must not hide every entry stored after it
+			const int openEntries = G_RepairNPCBraces( buffer, holdChar );
 
-			if ( totallen + len >= MAX_NPC_DATA_SIZE ) {
+			if ( totallen + len + openEntries >= MAX_NPC_DATA_SIZE ) {
 				G_Error( "NPC_LoadParms: ran out of space before reading %s\n(you must make the .npc files smaller)", holdChar );
 			}
 			strcat( marker, buffer );
+			if ( openEntries ) {
+				strcat( marker, "}" );
+				len++;
+			}
 			gi.FS_FreeFile( buffer );
 
 			totallen += len;

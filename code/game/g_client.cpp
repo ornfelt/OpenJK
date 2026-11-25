@@ -2037,7 +2037,10 @@ void G_ChangePlayerModel( gentity_t *ent, const char *newModel )
 		else
 		{
 			gi.Printf( S_COLOR_RED"G_ChangePlayerModel: cannot find NPC %s\n", newModel );
-			G_ChangePlayerModel( ent, "stormtrooper" );	//need a better fallback?
+			if ( Q_stricmp( newModel, "stormtrooper" ) ) // player mods: no endless recursion when the fallback is missing too
+			{
+				G_ChangePlayerModel( ent, "stormtrooper" );	//need a better fallback?
+			}
 		}
 	}
 }
