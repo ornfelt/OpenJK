@@ -1,0 +1,10 @@
+# BabyYoda ships its Grogu model as models/players/yodavm/ and its npc in ext_data/npcs/yodavm.npc:
+# the same paths as YodaVM, whose pk3 sorts later and wins every one of them, so Grogu never shows
+# and the babyyoda npc does not exist. The override gives BabyYoda's model a dir of its own.
+# (user decision 2026-11-25: override pk3s for the clashes)
+needs   BabyYoda
+from    BabyYoda/BabyYoda/BabyYoda.pk3
+rename  models/players/yodavm/ models/players/babyyoda/
+copy    ext_data/npcs/yodavm.npc ext_data/npcs/babyyoda.npc
+set     ext_data/npcs/babyyoda.npc babyyoda playerModel babyyoda
+file    scripts/babyyoda.bot babyyoda.bot

@@ -2,7 +2,8 @@
 #
 # Copies every mod's pk3(s) from the players dir (one dir per mod) into base/, minus the
 # alternative variants player_mods.conf skips, plus the loose files it lists as `extra` and the
-# fork's own files in tools/player_mods/base/ (the default modelscale.cfg ...). It writes a
+# fork's own files in tools/player_mods/base/ (the default modelscale.cfg ...) and the override
+# pk3 build_overrides.py (python) makes from tools/player_mods/override/ for the mod clashes. It writes a
 # manifest (player_mods_manifest.txt in base/) so -Uninstall removes exactly what it installed,
 # never overwrites a file it did not install, and lists the pk3s that replace stock files.
 # The mods themselves are never changed; pk3s are only copied (and listed as zips).
@@ -54,6 +55,8 @@ $ConfFile      = Join-Path $ScriptDir 'player_mods.conf'
 $ForkBaseDir   = Join-Path $ScriptDir 'base'
 $ManifestName  = 'player_mods_manifest.txt'
 $ForkSource    = 'fork'          # manifest source tag of the fork's own files
+$OverrideDir   = Join-Path $ScriptDir 'override'   # recipes for the mod clashes (build_overrides.py)
+$OverrideSource = 'override'     # manifest source tag of the built override pk3
 $InstallSubdir = 'JediAcademy'   # OpenJK's JKAInstallDir under CMAKE_INSTALL_PREFIX
 $OnWindows     = ($env:OS -eq 'Windows_NT')
 if ($OnWindows) {
@@ -198,6 +201,24 @@ if ((Test-Path -LiteralPath $ForkBaseDir) -and $Only.Count -eq 0) {
 		$sources.Add([pscustomobject]@{ Path = $f.FullName; Tag = "$ForkSource/$($f.Name)" })
 	}
 }
+# the override pk3 for the clashes between the selected mods (recipes in override\)
+$python = Get-Command python3, python -ErrorAction SilentlyContinue | Select-Object -First 1
+if ((Get-ChildItem -LiteralPath $OverrideDir -Filter '*.recipe' -ErrorAction SilentlyContinue) -and $sources.Count -gt 0) {
+	$modsCsv = (@($sources | ForEach-Object { ($_.Tag -split '/')[0] }) | Sort-Object -Unique) -join ','
+	$builder = Join-Path $ScriptDir 'build_overrides.py'
+	if (-not $python) {
+		Write-Warn 'no python found: the override pk3 is not built, mod clashes stay unresolved'
+	} elseif ($DebugCmd) {
+		$ovTmp = Join-Path ([IO.Path]::GetTempPath()) 'player_mods_overrides'
+		Write-Output "& $(Quote $python.Source) -I $(Quote $builder) --players $(Quote $Players) --out $(Quote $ovTmp) --mods $(Quote $modsCsv) -q"
+		$sources.Add([pscustomobject]@{ Path = (Join-Path $ovTmp '~playermods_overrides.pk3'); Tag = "$OverrideSource/~playermods_overrides.pk3" })
+	} else {
+		$ovTmp = Join-Path ([IO.Path]::GetTempPath()) ("player_mods_overrides_" + [IO.Path]::GetRandomFileName())
+		$ovPk3 = & $python.Source -I $builder --players $Players --out $ovTmp --mods $modsCsv -q
+		if ($LASTEXITCODE -ne 0) { Write-Err 'the override pk3 could not be built (see above): mod clashes stay unresolved' }
+		elseif ($ovPk3) { $sources.Add([pscustomobject]@{ Path = "$ovPk3".Trim(); Tag = "$OverrideSource/$(Split-Path -Leaf "$ovPk3".Trim())" }) }
+	}
+}
 if ($sources.Count -eq 0) { Write-Warn 'nothing selected'; exit 0 }
 
 Invoke-Step "New-Item -ItemType Directory -Force -Path $(Quote $Dest) | Out-Null" { New-Item -ItemType Directory -Force -Path $Dest | Out-Null }
@@ -210,7 +231,7 @@ foreach ($s in $sources) {
 	}
 	$taken[$name] = $s.Tag
 	$target = Join-Path $Dest $name
-	$newSha = Get-Sha $s.Path
+	$newSha = if (Test-Path -LiteralPath $s.Path) { Get-Sha $s.Path } else { '(built at install)' }  # -DebugCmd: no override pk3 yet
 	if (Test-Path -LiteralPath $target) {
 		if (-not $manSha.ContainsKey($name)) { Write-Warn "  not installed by this script, left alone: $name"; $refused++; continue }
 		$curSha = Get-Sha $target
@@ -238,7 +259,7 @@ if ($stockPaks.Count -gt 0) {
 	$stock = New-Object 'System.Collections.Generic.HashSet[string]'
 	foreach ($p in $stockPaks) { foreach ($n in Get-ZipNames $p.FullName) { [void]$stock.Add($n) } }
 	foreach ($s in $sources) {
-		if ($s.Path -notmatch '\.pk3$') { continue }
+		if ($s.Path -notmatch '\.pk3$' -or -not (Test-Path -LiteralPath $s.Path)) { continue }
 		$hits = @(Get-ZipNames $s.Path | Where-Object { $stock.Contains($_) } | Sort-Object -Unique)
 		if ($hits.Count -gt 0) {
 			$more = if ($hits.Count -gt 4) { ' ...' } else { '' }
@@ -249,4 +270,5 @@ if ($stockPaks.Count -gt 0) {
 	Write-Warn "no assets*.pk3 in $(Join-Path $Game 'base'): stock overrides not listed (-Game <dir>)"
 }
 
+if ($ovTmp -and -not $DebugCmd -and (Test-Path -LiteralPath $ovTmp)) { Remove-Item -Recurse -Force -LiteralPath $ovTmp }
 Write-Ok "installed $installed, updated $updated, unchanged $same, left alone $refused - manifest $Manifest"

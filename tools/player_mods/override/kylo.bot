@@ -1,0 +1,13 @@
+{
+name		"Kylo Ren"
+model		Kylo
+color1		0
+saber1		"kylo_ren"
+personality	/botfiles/Kylo.jkb
+}
+{
+name		"Kylo Ren TFA"
+model		kylo_ren
+color1		0
+personality	/botfiles/kylo.jkb
+}

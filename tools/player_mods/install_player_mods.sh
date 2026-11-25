@@ -3,7 +3,8 @@
 #
 # Copies every mod's pk3(s) from the players dir (one dir per mod) into base/, minus the
 # alternative variants player_mods.conf skips, plus the loose files it lists as `extra` and the
-# fork's own files in tools/player_mods/base/ (the default modelscale.cfg ...). It writes a
+# fork's own files in tools/player_mods/base/ (the default modelscale.cfg ...) and the override
+# pk3 build_overrides.py makes from tools/player_mods/override/ for the mod clashes. It writes a
 # manifest (player_mods_manifest.txt in base/) so --uninstall removes exactly what it installed,
 # never overwrites a file it did not install, and lists the pk3s that replace stock files.
 # The mods themselves are never changed; pk3s are only copied (and listed as zips).
@@ -48,6 +49,8 @@ CONF_FILE="$SCRIPT_DIR/player_mods.conf"
 FORK_BASE_DIR="$SCRIPT_DIR/base"
 MANIFEST_NAME="player_mods_manifest.txt"
 FORK_SOURCE="fork"                       # manifest source tag of the fork's own files
+OVERRIDE_DIR="$SCRIPT_DIR/override"      # recipes for the mod clashes (build_overrides.py)
+OVERRIDE_SOURCE="override"               # manifest source tag of the built override pk3
 DEFAULT_PLAYERS="$HOME/Downloads/star_wars_ja_mods/players"
 INSTALL_SUBDIR="JediAcademy"             # OpenJK's JKAInstallDir under CMAKE_INSTALL_PREFIX
 case "$(uname -s)" in
@@ -199,6 +202,23 @@ if [[ -d "$FORK_BASE_DIR" && ${#only[@]} -eq 0 ]]; then
 		sources+=("$f"); tags+=("$FORK_SOURCE/${f#"$FORK_BASE_DIR"/}")
 	done < <(find "$FORK_BASE_DIR" -maxdepth 1 -type f -print0 | sort -zf)
 fi
+# the override pk3 for the clashes between the selected mods (recipes in override/)
+if compgen -G "$OVERRIDE_DIR/*.recipe" > /dev/null && [[ ${#tags[@]} -gt 0 ]]; then
+	mods_csv="$(for t in "${tags[@]}"; do printf '%s\n' "${t%%/*}"; done | sort -fu | paste -sd, -)"
+	if [[ $debug -eq 1 ]]; then
+		ov_tmp="${TMPDIR:-/tmp}/player_mods_overrides"
+		printf '%q ' python3 -I "$SCRIPT_DIR/build_overrides.py" --players "$players" --out "$ov_tmp" --mods "$mods_csv" -q; printf '\n'
+		ov_pk3="$(python3 -I "$SCRIPT_DIR/build_overrides.py" --players "$players" --list --mods "$mods_csv" | grep -q '(applies)' && echo "$ov_tmp/~playermods_overrides.pk3" || true)"
+	else
+		ov_tmp="$(mktemp -d)"
+		trap 'rm -rf -- "$ov_tmp"' EXIT
+		ov_pk3="$(python3 -I "$SCRIPT_DIR/build_overrides.py" --players "$players" --out "$ov_tmp" --mods "$mods_csv" -q)" \
+			|| { print_err "the override pk3 could not be built (see above): mod clashes stay unresolved"; ov_pk3=""; }
+	fi
+	if [[ -n "$ov_pk3" ]]; then
+		sources+=("$ov_pk3"); tags+=("$OVERRIDE_SOURCE/$(basename "$ov_pk3")")
+	fi
+fi
 [[ ${#sources[@]} -gt 0 ]] || { print_warn "nothing selected"; exit 0; }
 
 run mkdir -p -- "$dest"
@@ -211,7 +231,7 @@ for i in "${!sources[@]}"; do
 	fi
 	taken["${name,,}"]="$tag"
 	target="$dest/$name"
-	new_sha="$(sha_of "$src")"
+	if [[ -f "$src" ]]; then new_sha="$(sha_of "$src")"; else new_sha="(built at install)"; fi  # --debug: no override pk3 yet
 	if [[ -e "$target" ]]; then
 		if [[ -z "${man_sha[$name]+x}" ]]; then
 			print_warn "  not installed by this script, left alone: $name"; refused=$((refused + 1)); continue
@@ -244,6 +264,8 @@ for p in sorted(glob.glob(os.path.join(sys.argv[1], "assets*.pk3"))):
 	with zipfile.ZipFile(p) as z:
 		stock.update(n.replace("\\", "/").lower() for n in z.namelist() if not n.endswith("/"))
 for p in sys.argv[2:]:
+	if not os.path.isfile(p):  # --debug: the override pk3 is not built
+		continue
 	with zipfile.ZipFile(p) as z:
 		hits = sorted({n.replace("\\", "/").lower() for n in z.namelist()} & stock)
 	if hits:

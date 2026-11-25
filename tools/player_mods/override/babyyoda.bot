@@ -1,0 +1,7 @@
+{
+name		"Baby Yoda"
+model		babyyoda
+color1		0
+saber1		"yoda"
+personality	/botfiles/yodavm.jkb
+}

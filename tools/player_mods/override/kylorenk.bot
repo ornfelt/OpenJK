@@ -1,0 +1,7 @@
+{
+name		"Kylo Ren K"
+model		KyloRenK
+color1		0
+saber1		"kylo_ren"
+personality	/botfiles/KyloRenK.jkb
+}

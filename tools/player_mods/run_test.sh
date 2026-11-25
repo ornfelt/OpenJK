@@ -21,6 +21,8 @@
 #   only the error lines that a no-mods run of the same cfg did not print:
 #     ./run_test.sh ded --no-mods --home /tmp/h0 --cfg tests/bots.cfg
 #     ./run_test.sh ded --baseline /tmp/h0/playermods_test/qconsole.log --cfg tests/bots.cfg
+#   read the mouse (not grabbed) for a menu driver such as sp_menu_check.sh:
+#     ./run_test.sh sp --mouse --exec "wait 3000; quit"
 #   remove the home afterwards:
 #     ./run_test.sh ded --clean --exec "..."
 #   print the equivalent shell commands instead of running them:
@@ -64,7 +66,7 @@ usage() { sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 # ---------------------------------------------------------------- arguments
 mode="${1:-}"
 case "$mode" in sp|mp|ded) shift ;; -h|--help) usage; exit 0 ;; *) print_err "first argument: sp, mp or ded"; usage; exit 1 ;; esac
-home="" cfg="" exec_cmds="" baseline="" game="" install=1 mods=1 clean=0 debug=0 timeout_s=$DEFAULT_TIMEOUT grep_re="$DEFAULT_GREP" case_sensitive=0
+home="" cfg="" exec_cmds="" baseline="" mouse=0 game="" install=1 mods=1 clean=0 debug=0 timeout_s=$DEFAULT_TIMEOUT grep_re="$DEFAULT_GREP" case_sensitive=0
 install_args=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -80,6 +82,7 @@ while [[ $# -gt 0 ]]; do
 		--baseline)          baseline="$2"; shift 2 ;;
 		-c|--case-sensitive) case_sensitive=1; shift ;;
 		--clean)             clean=1; shift ;;
+		--mouse)             mouse=1; shift ;;
 		-d|--debug)          debug=1; shift ;;
 		-h|--help)           usage; exit 0 ;;
 		*)                   if [[ -z "$cfg" && -f "$1" ]]; then cfg="$1"; shift; else print_err "unknown argument: $1"; exit 1; fi ;;
@@ -136,7 +139,9 @@ args=(+set fs_homepath "$home" +set fs_basepath "$game" +set fs_cdpath "" +set f
 	+set developer 1 +set logfile 2 +set com_hunkmegs 512 +set bot_enable 1 "${NET_CVARS[@]}")
 case "$mode" in
 	ded) args+=(+set dedicated 1) ;;
-	*)   args+=("${WINDOW_CVARS[@]}") ;;
+	*)   args+=("${WINDOW_CVARS[@]}")
+	     # --mouse: menu input from a driver (sp_menu_check.sh) - the mouse is read but never grabbed
+	     [[ $mouse -eq 1 ]] && args+=(+set in_mouse 1 +set in_nograb 1) ;;
 esac
 args+=(+exec "$CFG_NAME")
 print_key "run" "$exe (timeout ${timeout_s}s)"

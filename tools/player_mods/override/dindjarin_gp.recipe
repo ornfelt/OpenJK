@@ -1,0 +1,9 @@
+# DinDjarin (GustavoPredador) and themando_doughnuts (Doughnuts) both ship models/players/dindjarin/;
+# themando's pk3 sorts later and wins the glm, the skin and sounds.cfg, so GustavoPredador's Din
+# never shows. The override moves his model to models/players/dindjarin_gp/ and points his npc
+# (Din_Djarin; themando's is dindjarin) at it. (user decision 2026-11-25)
+needs   DinDjarin
+from    DinDjarin/DinDjarin/The_Mandalorian_Din_Djarin.pk3
+rename  models/players/DinDjarin/ models/players/dindjarin_gp/
+copy    ext_data/npcs/Din_Djarin.npc ext_data/npcs/Din_Djarin.npc
+set     ext_data/npcs/Din_Djarin.npc Din_Djarin playerModel dindjarin_gp

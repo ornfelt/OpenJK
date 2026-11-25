@@ -1,0 +1,8 @@
+# Three mods name their bot "Kylo Ren"; KyloRenTFAUpdated's scripts/kylo.bot also replaces
+# kyloV.1.02's scripts/Kylo.bot (same name) and points at a model that does not exist
+# (KyloRen_Hood: Kyle). The override replaces both .bot files: every Kylo bot on its real model,
+# each with its own name. Both kylo bots share botfiles/kylo.jkb (KyloRenTFAUpdated's wins it).
+# (user decision 2026-11-25)
+needs   KyloRenTFAUpdated kyloV.1.02 zKyloRenKv2
+file    scripts/kylo.bot kylo.bot
+file    scripts/KyloRenK.bot kylorenk.bot
