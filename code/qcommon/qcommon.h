@@ -517,6 +517,9 @@ void	FS_ForceFlush( fileHandle_t f );
 void	FS_FreeFile( void *buffer );
 // frees the memory returned by FS_ReadFile
 
+int		FS_ForEachFileCopy( const char *qpath, qboolean skipFirst, void (*callback)( const char *data, int len, void *context ), void *context );
+// player mods: every copy of a file in the search path, the lowest priority first
+
 void	FS_WriteFile( const char *qpath, const void *buffer, int size );
 // writes a complete file, creating any subdirectories needed
 

@@ -4555,6 +4555,11 @@ qboolean ItemParse_cvarStrList( itemDef_t *item)
 		for (; multiPtr->count < uiInfo.playerSpeciesCount; multiPtr->count++)
 		{
 			multiPtr->cvarList[multiPtr->count] = String_Alloc(Q_strupr(va("@MENUS_%s",uiInfo.playerSpecies[multiPtr->count].Name )));	//look up translation
+			// player mods: a species whose mod ships no MENUS.str entry shows its dir name, not a blank
+			if ( !SE_GetString( &multiPtr->cvarList[multiPtr->count][1] )[0] )
+			{
+				multiPtr->cvarList[multiPtr->count] = String_Alloc( uiInfo.playerSpecies[multiPtr->count].Name );
+			}
 			multiPtr->cvarStr[multiPtr->count] = uiInfo.playerSpecies[multiPtr->count].Name;	//value
 		}
 		return qtrue;
