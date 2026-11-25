@@ -708,7 +708,7 @@ retryModel:
 		char iconName[1024];
 		strcpy(iconName, "icon_");
 		j = strlen(iconName);
-		while (skinName[i] && skinName[i] != '|' && j < 1024)
+		while (skinName[i] && skinName[i] != '|' && j < (int)sizeof(iconName) - 1) // player mods: room for the terminator
 		{
             iconName[j] = skinName[i];
 			j++;
