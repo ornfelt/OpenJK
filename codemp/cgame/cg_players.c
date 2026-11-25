@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ghoul2/G2.h"
 #include "game/bg_saga.h"
 #include "cg_playermods.h" // player mods
+#include "cg_modelscale.h" // player mods
 
 extern vmCvar_t	cg_thirdPersonAlpha;
 
@@ -4553,7 +4554,7 @@ static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader ) {
 
 	memset( &ent, 0, sizeof( ent ) );
 	VectorCopy( cent->lerpOrigin, ent.origin );
-	ent.origin[2] += 48;
+	ent.origin[2] += CG_ModelScaleAboveOrigin( cent, 48 ); // player mods: over a scaled head
 	ent.reType = RT_SPRITE;
 	ent.customShader = shader;
 	ent.radius = 10;

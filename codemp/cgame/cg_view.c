@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // for a 3D rendering
 #include "cg_local.h"
 #include "game/bg_saga.h"
+#include "cg_modelscale.h" // player mods
 
 #define MASK_CAMERACLIP (MASK_SOLID|CONTENTS_PLAYERCLIP)
 #define CAMERA_SIZE	4
@@ -294,7 +295,7 @@ static void CG_CalcIdealThirdPersonViewTarget(void)
 	VectorCopy( cameraFocusLoc, cameraIdealTarget );
 
 	{
-		float vertOffset = cg_thirdPersonVertOffset.value;
+		float vertOffset = cg_thirdPersonVertOffset.value * CG_ModelScaleCameraFactor(); // player mods: scaled
 
 		if (cg.snap && cg.snap->ps.m_iVehicleNum)
 		{
@@ -352,7 +353,7 @@ CG_CalcTargetThirdPersonViewLocation
 */
 static void CG_CalcIdealThirdPersonViewLocation(void)
 {
-	float thirdPersonRange = cg_thirdPersonRange.value;
+	float thirdPersonRange = cg_thirdPersonRange.value * CG_ModelScaleCameraFactor(); // player mods: scaled
 
 	if (cg.snap && cg.snap->ps.m_iVehicleNum)
 	{
@@ -627,7 +628,7 @@ extern qboolean BG_UnrestrainedPitchRoll( playerState_t *ps, Vehicle_t *pVeh );
 static void CG_OffsetThirdPersonView( void )
 {
 	vec3_t diff;
-	float thirdPersonHorzOffset = cg_thirdPersonHorzOffset.value;
+	float thirdPersonHorzOffset = cg_thirdPersonHorzOffset.value * CG_ModelScaleCameraFactor(); // player mods: scaled
 	float deltayaw;
 
 	if (cg.snap && cg.snap->ps.m_iVehicleNum)
