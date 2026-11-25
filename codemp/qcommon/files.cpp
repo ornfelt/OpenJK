@@ -2069,6 +2069,91 @@ void FS_FreeFile( void *buffer ) {
 }
 
 /*
+=============
+FS_ForEachFileCopy
+
+player mods: FS_ReadFile only sees the first copy of a file in the search path. Some files are
+meant to be merged instead (several mods each ship the whole strings/english/menus.str plus their
+own entries): this hands every copy to the callback, the lowest priority first, so the copy
+FS_ReadFile would return comes last. With skipFirst that copy is left out. The data passed is
+0-terminated and only valid during the call. Returns the number of copies found (skipped one
+included).
+=============
+*/
+#define MAX_FILE_COPIES	256
+
+int FS_ForEachFileCopy( const char *qpath, qboolean skipFirst, void (*callback)( const char *data, int len, void *context ), void *context ) {
+	searchpath_t	*search;
+	searchpath_t	*found[MAX_FILE_COPIES];
+	fileInPack_t	*foundPak[MAX_FILE_COPIES];
+	int				numFound = 0;
+	int				i, len;
+	char			*data;
+
+	FS_AssertInitialised();
+
+	if ( !qpath || !qpath[0] || strstr( qpath, ".." ) || strstr( qpath, "::" ) ) {
+		return 0;
+	}
+
+	for ( search = fs_searchpaths; search && numFound < MAX_FILE_COPIES; search = search->next ) {
+		if ( search->pack ) {
+			if ( !FS_PakIsPure( search->pack ) ) {
+				continue;	// a pure server does not allow this pk3
+			}
+			fileInPack_t *pakFile = search->pack->hashTable[FS_HashFileName( qpath, search->pack->hashSize )];
+			for ( ; pakFile; pakFile = pakFile->next ) {
+				if ( !FS_FilenameCompare( pakFile->name, qpath ) ) {
+					found[numFound] = search;
+					foundPak[numFound++] = pakFile;
+					break;
+				}
+			}
+		} else if ( search->dir ) {
+			FILE *f = fopen( FS_BuildOSPath( search->dir->path, search->dir->gamedir, qpath ), "rb" );
+			if ( f ) {
+				fclose( f );
+				found[numFound] = search;
+				foundPak[numFound++] = NULL;
+			}
+		}
+	}
+
+	for ( i = numFound - 1; i >= ( skipFirst ? 1 : 0 ); i-- ) {
+		if ( foundPak[i] ) {
+			unzFile z = unzOpen( found[i]->pack->pakFilename );
+			if ( !z ) {
+				continue;
+			}
+			len = foundPak[i]->len;
+			data = (char *)Z_Malloc( len + 1, TAG_FILESYS, qfalse );
+			unzSetOffset( z, foundPak[i]->pos );
+			unzOpenCurrentFile( z );
+			len = unzReadCurrentFile( z, data, len );
+			unzCloseCurrentFile( z );
+			unzClose( z );
+		} else {
+			FILE *f = fopen( FS_BuildOSPath( found[i]->dir->path, found[i]->dir->gamedir, qpath ), "rb" );
+			if ( !f ) {
+				continue;
+			}
+			fseek( f, 0, SEEK_END );
+			len = ftell( f );
+			fseek( f, 0, SEEK_SET );
+			data = (char *)Z_Malloc( len + 1, TAG_FILESYS, qfalse );
+			len = (int)fread( data, 1, len, f );
+			fclose( f );
+		}
+		if ( len >= 0 ) {
+			data[len] = '\0';
+			callback( data, len, context );
+		}
+		Z_Free( data );
+	}
+	return numFound;
+}
+
+/*
 ============
 FS_WriteFile
 

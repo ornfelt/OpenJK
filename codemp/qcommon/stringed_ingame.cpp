@@ -839,6 +839,58 @@ void CStringEdPackage::SetString( const char *psLocalReference, const char *psNe
 //
 // return is either NULL for good else error message to display...
 //
+// player mods: the parse of one copy of a string file already in memory, taken out of
+// SE_Load_Actual so SE_MergeCopy can parse the lower copies the same way
+//
+static const char *SE_ParseLoadedData( const char *psFileName, unsigned char *psLoadedData, SE_BOOL bLoadDebug )
+{
+	const char *psErrorMessage = NULL;
+
+	// now parse the data...
+	//
+	char *psParsePos = (char *) psLoadedData;
+
+	TheStringPackage.SetupNewFileParse( psFileName, bLoadDebug );
+
+	char sLineBuffer[16384];	// should be enough for one line of text (some of them can be BIG though)
+	while ( !psErrorMessage && TheStringPackage.ReadLine((const char *&) psParsePos, sLineBuffer ) )
+	{
+		if (strlen(sLineBuffer))
+		{
+//			__DEBUGOUT( sLineBuffer );
+//			__DEBUGOUT( "\n" );
+
+			psErrorMessage = TheStringPackage.ParseLine( sLineBuffer );
+		}
+	}
+
+	if (!psErrorMessage && !TheStringPackage.EndMarkerFoundDuringParse())
+	{
+		psErrorMessage = va("Truncated file, failed to find \"%s\" at file end!", sSE_KEYWORD_ENDMARKER);
+	}
+
+	return psErrorMessage;
+}
+
+// player mods: FS_ForEachFileCopy callback merging one lower copy of a string file
+//
+struct SE_MergeContext_t
+{
+	const char	*psFileName;
+	SE_BOOL		bLoadDebug;
+};
+
+static void SE_MergeCopy( const char *psData, int iLen, void *pvContext )
+{
+	const SE_MergeContext_t *pContext = (const SE_MergeContext_t *) pvContext;
+	const char *psErrorMessage = SE_ParseLoadedData( pContext->psFileName, (unsigned char *) psData, pContext->bLoadDebug );
+
+	if ( psErrorMessage )
+	{
+		Com_Printf( S_COLOR_YELLOW "WARNING: SE_Load(): a lower copy of \"%s\" was not merged: %s\n", pContext->psFileName, psErrorMessage );
+	}
+}
+
 static const char *SE_Load_Actual( const char *psFileName, SE_BOOL bLoadDebug, SE_BOOL bSpeculativeLoad )
 {
 	const char *psErrorMessage = NULL;
@@ -846,30 +898,9 @@ static const char *SE_Load_Actual( const char *psFileName, SE_BOOL bLoadDebug, S
 	unsigned char *psLoadedData = SE_LoadFileData( psFileName );
 	if ( psLoadedData )
 	{
-		// now parse the data...
-		//
-		char *psParsePos = (char *) psLoadedData;
-
-		TheStringPackage.SetupNewFileParse( psFileName, bLoadDebug );
-
-		char sLineBuffer[16384];	// should be enough for one line of text (some of them can be BIG though)
-		while ( !psErrorMessage && TheStringPackage.ReadLine((const char *&) psParsePos, sLineBuffer ) )
-		{
-			if (strlen(sLineBuffer))
-			{
-//				__DEBUGOUT( sLineBuffer );
-//				__DEBUGOUT( "\n" );
-
-				psErrorMessage = TheStringPackage.ParseLine( sLineBuffer );
-			}
-		}
+		psErrorMessage = SE_ParseLoadedData( psFileName, psLoadedData, bLoadDebug );	// player mods: moved out
 
 		SE_FreeFileDataAfterLoad( psLoadedData);
-
-		if (!psErrorMessage && !TheStringPackage.EndMarkerFoundDuringParse())
-		{
-			psErrorMessage = va("Truncated file, failed to find \"%s\" at file end!", sSE_KEYWORD_ENDMARKER);
-		}
 	}
 	else
 	{
@@ -944,6 +975,11 @@ const char *SE_Load( const char *psFileName, SE_BOOL bLoadDebug = SE_TRUE, SE_BO
 	//
 	////////////////////////////////////////////////////
 
+
+	// player mods: merge the lower copies of the file first - mods each ship the whole stock file plus
+	// their own entries, and only the top copy used to count - then the top copy wins per key as before
+	SE_MergeContext_t mergeContext = { psFileName, bLoadDebug };
+	FS_ForEachFileCopy( psFileName, qtrue, SE_MergeCopy, &mergeContext );
 
 	const char *psErrorMessage = SE_Load_Actual( psFileName, bLoadDebug, SE_FALSE );
 

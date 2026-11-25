@@ -8090,7 +8090,13 @@ qboolean ItemParse_cvarStrList( itemDef_t *item, int handle ) {
 #ifndef _CGAME
 		for (; multiPtr->count < uiInfo.playerSpeciesCount; multiPtr->count++)
 		{
+			char speciesText[MAX_STRING_CHARS] = { 0 };	// player mods: for the fallback below
 			multiPtr->cvarList[multiPtr->count] = String_Alloc(Q_strupr(va("@MENUS_%s",uiInfo.playerSpecies[multiPtr->count].Name )));	//look up translation
+			// player mods: a species whose mod ships no MENUS.str entry shows its dir name, not a blank
+			if ( !trap->SE_GetStringTextString( &multiPtr->cvarList[multiPtr->count][1], speciesText, sizeof( speciesText ) ) || !speciesText[0] )
+			{
+				multiPtr->cvarList[multiPtr->count] = String_Alloc( uiInfo.playerSpecies[multiPtr->count].Name );
+			}
 			multiPtr->cvarStr[multiPtr->count] = uiInfo.playerSpecies[multiPtr->count].Name;	//value
 		}
 #endif
