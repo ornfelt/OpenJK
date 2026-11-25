@@ -17,6 +17,7 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
   the player's size (`code/cgame/cg_modelscale.cpp`, `cg_thirdPersonModelScale`).
 - The npc bbox rule, in both games: width, stand and crouch height each rescale from the scale they
   belong to (the `.npc` scale for a value the file set, 100 for a default one).
+- The user chose that an npc's own `.npc` scale wins over the cfg (both games, tested).
 - Tested: SP `playermodel` yodavm / T_yoda / greeveevm, `modelscale` refused for lack of room and
   applied, crouching, save / load keeping the value, `g_modelScale` off / on, six npcs spawned in
   SP and MP with and without `g_modelScale`, saves made by the pre-change module (built from
@@ -24,24 +25,19 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Next
 
-1. The user's answer on the stock SP npcs the default cfg resizes (Waiting for the user); then
-   apply it (default cfg data or one precedence line in both games).
-2. Step 6, custom skeletons in MP (T_Yoda's `_humanoid_yoda.gla`): read how MP picks the
+1. Step 6, custom skeletons in MP (T_Yoda's `_humanoid_yoda.gla`): read how MP picks the
    animation set per client (`bgAllAnims`, `localAnimIndex`, `BG_ParseAnimationFile`,
    `G_PlayerHasCustomSkeleton`, `CG_RegisterClientModelname`) and whether a client model on its own
    `.gla` can be animated on both server and cgame without a protocol change; ask the user before
    anything that isn't protocol- and ABI-neutral. If it can't be done neutrally, record that and
    go on to step 7.
-3. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
+2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
    screenshots, the MP custom-character species names, `inventory.py` knowing the override
    recipes, the ui model preview showing the scale (optional).
 
 ## Waiting for the user
 
-- The default `modelscale.cfg` has JA++'s entries, and the cfg wins over a `.npc` scale (the
-  precedence asked for), so 11 stock SP npcs change size: Desann 135 -> 115, chewie 122 -> 118,
-  jawa / jawa_armed 75 -> 80, MonMothma 100 -> 84, Jan / JediF 100 -> 94, Tavion (4 npcs)
-  100 -> 95. Asked at the end of run 4 (see Decisions once answered).
+Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
 
 ## Steps
 
@@ -291,7 +287,12 @@ points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no e
   rounded to whole percent (JA++ floors: its 1.18 gives 117, ours 118); bad pairs are skipped with
   a warning; up to 512 models, 64 KB; the topmost copy wins (no merge across pk3s).
 - Precedence (players and bots): `/modelscale` (only while `g_modelScaleCmd` is on, clamped to the
-  range), the cfg, 100. Npcs: the cfg, the `.npc` `scale`, 100. A `/modelscale` value lives until
+  range), the cfg, the `.npc` scale (SP `playermodel <npc>`), 100. Npcs (the user, 2026-11-25,
+  changing the skill's "cfg before `.npc`"): their own `.npc` scale wins, the cfg sizes only npcs
+  without one, then 100 - so the default cfg's JA++ entries (tuned for MP player models) don't
+  resize stock SP npcs that have a scale (Desann 135, chewie 122, the jawas 75 stay); Mon Mothma,
+  Jan / JediF and the Tavions (no `.npc` scale) take JA++'s 84 / 94 / 95. A `.npc` `scale 100`
+  can't be told from none. A `/modelscale` value lives until
   `default`, a disconnect or a map change (no session field - the game module reloads per map).
 - The bbox (run 3): the feet stay at `MINS_Z` (-24), as every JA cgame raises a scaled model by
   `24 * (s - 1)`; width `15 * s`, stand / crouch / dead heights and view heights scaled above the
@@ -453,4 +454,9 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   `NPC_InitGame`, top of `G_RunFrame`), `g_svcmds.cpp` (table), `cg_main.cpp` / `cg_local.h`
   (`cg_thirdPersonModelScale`), `cg_view.cpp` (vert offset, range, horz offset), SP CMake list
   (+ the shared parser).
-- (this commit) `[Tools] player mods: ledger run 4` - `PLAYER_MODS_STATUS.md` only.
+- `3bb6d8d8` `[Tools] player mods: ledger run 4` - `PLAYER_MODS_STATUS.md` only.
+- `3ad38732` `[Shared] player mods: an npc's own .npc scale wins over modelscale.cfg` -
+  `G_ModelScaleNPC` (`codemp/game/g_modelscale.c`) and the npc branch of `G_ModelScaleSetModel`
+  (`code/game/g_modelscale.cpp`): scale = the `.npc` scale when it is not 100, else the cfg's,
+  else 100; comments, the default cfg's header.
+- (this commit) `[Tools] player mods: ledger, the npc precedence` - `PLAYER_MODS_STATUS.md`.
