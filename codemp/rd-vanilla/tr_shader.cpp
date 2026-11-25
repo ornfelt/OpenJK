@@ -4014,6 +4014,15 @@ static void ScanAndLoadShaderFiles( void )
 			Q_strncpyz(shaderName, token, sizeof(shaderName));
 			shaderLine = COM_GetCurrentParseLine();
 
+			// player mods: a stray '}' between two shaders (SWTOR Revan's swtorrevan.shader has one)
+			// used to drop the whole file; blank it and go on with the next shader
+			if ( token[0] == '}' && token[1] == '\0' )
+			{
+				ri.Printf( PRINT_WARNING, "WARNING: Stray \"}\" on line %d of shader file %s ignored.\n", shaderLine, filename );
+				buffers[i][p - buffers[i] - 1] = ' ';
+				continue;
+			}
+
 			if ( token[0] == '#' )
 			{
 				ri.Printf( PRINT_WARNING, "WARNING: Deprecated shader comment \"%s\" on line %d in file %s.  Ignoring line.\n",
