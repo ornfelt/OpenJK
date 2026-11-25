@@ -6,42 +6,42 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-25 (run 3, Linux): steps 3 and 4 done - the player model size in MP.
+2026-11-25 (run 4, Linux): step 5 done - the player model size in SP.
 
-- `modelscale.cfg` (JA++'s format; JA++'s own file loads unchanged), the cvars `g_modelScale`,
-  `g_modelScaleCmd`, `g_modelScaleRange`, `/modelscale [n|default]`, the console / rcon commands
-  `modelscale <client> <n|default>` and `modelscales` (table plus every client's scale, bbox and
-  view height). Bots get their model's size like players; npcs take the table before their `.npc`
-  scale.
-- pmove scales a client's bbox and view heights from `iModelScale` on a server that says so
-  (serverinfo `g_modelScale`); the fork's cgame predicts the same box. The server's saber bolts
-  and ghoul2 hit origin are raised like the drawn model.
-- cgame: the third-person camera (range, offsets) and the sprites over a head follow the size
-  (`cg_thirdPersonModelScale`).
-- The default `tools/player_mods/base/modelscale.cfg` (installed by the install script): JA++'s
-  entries, the `japp.diff` ones and the mods' `.npc` scales as starting points (step 8 measures).
-- Tested: dedicated with bots (table sizes, rcon clamp, `g_modelScale` off / on), listen server
-  walking / crouching / jumping at 50 % and 150 % with `cg_showmiss 1` (no misses), the server's
-  and the drawn saber muzzle height within 1 unit at 50 / 100 / 135 % (a temporary print, not
-  committed), camera screenshots, JA++'s file parsed, no-mods MP / dedicated / SP runs, no new
-  warnings in a full build.
+- The `modelscale.cfg` parser moved to `shared/qcommon/q_modelscale.c` (MP game, MP cgame and the
+  SP game build it; not in `SharedCommonFiles`).
+- SP: `code/game/g_modelscale.cpp` - the same cvars plus `g_modelScaleSaved` (`CVAR_SAVEGAME`,
+  the command's value), console commands `modelscale [n|default]` (no cheats) and `modelscales`
+  (table, player, npcs). Hooks in `NPC_ParseParms`, `G_ChangePlayerModel`, `ClientSpawn`,
+  `InitGame`, `G_RunFrame` and the svcmds table; SP pmove needed no change. The SP camera follows
+  the player's size (`code/cgame/cg_modelscale.cpp`, `cg_thirdPersonModelScale`).
+- The npc bbox rule, in both games: width, stand and crouch height each rescale from the scale they
+  belong to (the `.npc` scale for a value the file set, 100 for a default one).
+- Tested: SP `playermodel` yodavm / T_yoda / greeveevm, `modelscale` refused for lack of room and
+  applied, crouching, save / load keeping the value, `g_modelScale` off / on, six npcs spawned in
+  SP and MP with and without `g_modelScale`, saves made by the pre-change module (built from
+  `a448e217`) loading in the new one, no-mods SP / MP / dedicated, no new warnings.
 
 ## Next
 
-1. Step 5, SP model scale: the same table, cvars and command in `code/game` (`g_client.cpp`'s
-   `G_ChangePlayerModel` / character creation, `NPC_stats.cpp`'s `scale`), `s.modelScale` on the
-   player, bbox, view height, camera (`code/cgame`), kept in the savegame. Reuse the parser of
-   `codemp/game/bg_modelscale.c` (SP builds C++: a copy in `code/game` or the file compiled as
-   C++ - decide and record). SP has no prediction; check how SP draws a scaled player (whether it
-   raises the model like the MP cgame) before choosing the bbox rule.
-2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
-   screenshots (spawn the npc in front of the camera: `cg_thirdPersonAngle 0` and a spawn
-   distance), the MP custom-character species names, `inventory.py` knowing the override recipes,
-   the ui player model preview showing the scale (optional).
+1. The user's answer on the stock SP npcs the default cfg resizes (Waiting for the user); then
+   apply it (default cfg data or one precedence line in both games).
+2. Step 6, custom skeletons in MP (T_Yoda's `_humanoid_yoda.gla`): read how MP picks the
+   animation set per client (`bgAllAnims`, `localAnimIndex`, `BG_ParseAnimationFile`,
+   `G_PlayerHasCustomSkeleton`, `CG_RegisterClientModelname`) and whether a client model on its own
+   `.gla` can be animated on both server and cgame without a protocol change; ask the user before
+   anything that isn't protocol- and ABI-neutral. If it can't be done neutrally, record that and
+   go on to step 7.
+3. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
+   screenshots, the MP custom-character species names, `inventory.py` knowing the override
+   recipes, the ui model preview showing the scale (optional).
 
 ## Waiting for the user
 
-Nothing (the run 1 questions were answered on 2026-11-25, see Decisions).
+- The default `modelscale.cfg` has JA++'s entries, and the cfg wins over a `.npc` scale (the
+  precedence asked for), so 11 stock SP npcs change size: Desann 135 -> 115, chewie 122 -> 118,
+  jawa / jawa_armed 75 -> 80, MonMothma 100 -> 84, Jan / JediF 100 -> 94, Tavion (4 npcs)
+  100 -> 95. Asked at the end of run 4 (see Decisions once answered).
 
 ## Steps
 
@@ -52,7 +52,7 @@ Nothing (the run 1 questions were answered on 2026-11-25, see Decisions).
 | 2 | Loading fixes (limits, SP string merge, conflicts, ...) | done: `.npc` brace repair, SP playermodel recursion, string file merge + species fallback, override pk3 for the clashes, MP shader stray brace, MP `sounds.cfg` |
 | 3 | MP model scale - game | done (run 3) |
 | 4 | MP model scale - cgame and ui | done (run 3); the ui model preview does not show the scale (optional, left) |
-| 5 | SP model scale | todo |
+| 5 | SP model scale | done (run 4) |
 | 6 | Custom skeletons in MP (T_Yoda) | todo |
 | 7 | Menus | todo |
 | 8 | Sizes for every mod | todo |
@@ -248,6 +248,8 @@ Other findings:
   boxed and predicted at their size.
 - MP: the custom character species list (the MP UI's "Custom" model) gets the same names merge
   and fallback, not seen on screen yet.
+- SP `t1_surprise`'s start spot hides a small player behind a rock ledge in the front view (YodaVM
+  at 50 % is out of sight with or without model scaling): take the step 8 shots elsewhere.
 - SP `playermodel`: several shots taken ~1.7 s after the switch show the new model in a T-pose
   (greeveevm, DT_StormTrooper_EP7, st_rey_scavenger, T_vader*, Luke_robeup / robedn / bobble,
   KyloRenK, JediTempleGuard) while other npcs of the same model animate. Timing or a missing
@@ -302,8 +304,28 @@ points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no e
   on a JA++ server predicts the standard box like that server (the key is missing).
 - Growing (`/modelscale`, a model change, a cvar change) is refused while the bigger box would
   start in solid, with a message; it then applies at the next spawn. Spawning does not check.
-- Npc bbox: scaled with the model only when the `.npc` file left it at the default (no `width` /
-  `height` / `crouchheight`); a file that sizes it keeps its own.
+- Npc bbox (run 4, both games): width, stand height and crouch height each rescale on their own; a
+  value the `.npc` file set belongs to the `.npc` scale, a default one to 100, so at the `.npc`
+  scale the file's values stay and a cfg / command scale resizes them proportionally (heights
+  above the feet). A file value equal to the default can't be told apart and counts as a default
+  (SP: kyloren's `width 16` = SP's default 16, so it scales). The player in SP follows the same
+  rule from what `NPC_ParseParms` gave it (`playermodel <npc>`), or the default box (a plain
+  model). (Run 3's MP rule left a box untouched as soon as the file set any key - T_Yoda kept
+  Kyle's stand height.)
+- SP (run 4): no pmove change - SP pmove takes the width from the entity's mins / maxs and the
+  heights (and the view height, height - 4) from `client->standheight / crouchheight`, all of them
+  already in the savegame, and the SP cgame raises a scaled model by `24 * (s - 1)` like MP's. SP
+  keeps 1.0 in `s.modelScale` for 100. The `modelscale` value lives in `g_modelScaleSaved`
+  (`CVAR_SAVEGAME`, so it is in the savegame and survives level changes; an old save without it
+  keeps the current value). The game module reloads per level, so the player's model, `.npc`
+  scale and base box are taken again at every model setup (`NPC_ParseParms`,
+  `G_ChangePlayerModel`'s `model|skin` path, the `ClientSpawn` paths that keep `NPC_type
+  "player"`), the model name from the ghoul2 file name when nothing else gives it. A `model|a|b|c`
+  (head / torso / legs) skin has no table key: such players match on the model only.
+  `g_modelScale 0` puts back the `.npc` scale and the box exactly as parsed.
+- The parser is shared (run 4): `shared/qcommon/q_modelscale.c`, plain C with a print callback,
+  compiled into jampgame, cgame and jagame explicitly (not through `SharedCommonFiles`, which the
+  engines and renderers link too).
 - Server ghoul2 (run 3): the saber bolts / render bolts (`properOrigin` in
   `WP_SaberPositionUpdate`) and the ghoul2 hit origin (`G_G2TraceCollide`) are raised by the same
   `24 * (s - 1)` the cgame draws with; checked within 1 unit. Other server-side bolt users (npc AI
@@ -407,6 +429,28 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   `cg.predictedPlayerState.iModelScale`, 1 on a vehicle or with `cg_thirdPersonModelScale 0`;
   `CG_ModelScaleAboveOrigin` = height * `cent->modelScale[2]`), `cg_view.c` (vert offset, range,
   horz offset multiplied), `cg_players.c` (`CG_PlayerFloatSprite` +48), `cg_xcvar.h`, CMake list.
-- (this commit) `[Tools] player mods: default modelscale.cfg, ledger run 3` -
+- `a448e217` `[Tools] player mods: default modelscale.cfg, ledger run 3` -
   `tools/player_mods/base/modelscale.cfg`, `PLAYER_MODS_STATUS.md`; nothing to port (the cfg is
   data the Rust port reads the same way).
+- `16ada1e1` `[Shared] player mods: the modelscale.cfg parser moves to shared/qcommon` - new
+  `shared/qcommon/q_modelscale.c` / `.h` (`Q_ModelScaleParse(table, text, fileName, print)`,
+  `Q_ModelScaleLookup`, `Q_ModelScaleParseRange`, `Q_ModelScaleClamp`, the `MODELSCALE_*`
+  constants, `MODELSCALE_MODEL_SIZE` 64; same behaviour as before, warnings through the callback),
+  `codemp/game/bg_modelscale.c` / `.h` keep only the bbox helpers and the serverinfo key,
+  `g_modelscale.c` calls the `Q_` names; the MP game / cgame CMake lists name the shared file. In
+  the Rust port: one shared parser module used by both games.
+- `2b65efec` `[MP] player mods: an npc's bbox follows its model scale part by part` -
+  `codemp/game/g_modelscale.c` (`G_ModelScaleNPC`: per-part base scale, see Decisions; early out
+  only when both scales are 100; `modelscales` lists `ET_NPC` entities) and its header comment.
+- `131f5da6` `[SP] player mods: modelscale.cfg, the modelscale command and the scaled bbox` - new
+  `code/game/g_modelscale.cpp` / `.h` (cvars incl. `g_modelScaleSaved`, table, player state,
+  `G_ModelScaleSetModel(ent, model|NULL, skin, npcScale, bboxFromNpc)`, the per-part box,
+  fit trace, restore, `G_ModelScaleRunFrame` (cvar modification counts), `Svcmd_ModelScale_f`,
+  `Svcmd_ModelScales_f`), new `code/cgame/cg_modelscale.cpp` (`CG_ModelScaleCameraFactor` from
+  `g_entities[0].s.modelScale[2]`); edits: `NPC_stats.cpp` (after `G_SetG2PlayerModel` in the
+  normal model branch, npc scale from `s.modelScale[0]`), `g_client.cpp` (`G_ChangePlayerModel`
+  `|` branch; the two `G_SetSkin` branches of `ClientSpawn`), `g_main.cpp` (`InitGame` after
+  `NPC_InitGame`, top of `G_RunFrame`), `g_svcmds.cpp` (table), `cg_main.cpp` / `cg_local.h`
+  (`cg_thirdPersonModelScale`), `cg_view.cpp` (vert offset, range, horz offset), SP CMake list
+  (+ the shared parser).
+- (this commit) `[Tools] player mods: ledger run 4` - `PLAYER_MODS_STATUS.md` only.
