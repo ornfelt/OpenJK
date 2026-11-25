@@ -23,8 +23,11 @@ step 2 started with its first fix.
 
 ## Next
 
-1. Ask / apply the user's decisions on the clashes (BabyYoda vs YodaVM, DinDjarin vs themando,
-   the two `kylo.bot`) - see "Waiting for the user".
+1. The clash overrides the user chose (Decisions): the install script builds override pk3s from
+   recipes in `tools/player_mods/override/` - BabyYoda's model as `babyyoda`, DinDjarin's as
+   `dindjarin_gp` (skins and npc entries rewritten), one `.bot` naming the three Kylo bots
+   distinctly on their real models. Recipes only, never mod files in the repo; built into
+   `base/` and recorded in the manifest like the pk3s.
 2. Step 2 continued: the SP `MENUS.str` merge (every pk3's copy of a string file merged, later
    entries winning per key, so all the `JEDI_*` character menu names survive); then the tolerant
    loaders worth doing: SWTOR Revan's shader file (one stray `}` rejects the whole file in
@@ -35,21 +38,7 @@ step 2 started with its first fix.
 
 ## Waiting for the user
 
-- **BabyYoda vs YodaVM** both ship `models/players/yodavm/` and `ext_data/npcs/yodavm.npc`;
-  YodaVM wins every shared file (pk3 order), so Grogu never shows and the `babyyoda` npc does not
-  exist. Recommended: an override pk3 the install script builds from BabyYoda.pk3 with the model
-  dir renamed to `babyyoda` (its skin's paths and its npc entry rewritten to match, the recipe
-  committed in `tools/player_mods/override/`, no mod file committed). Alternative: install only
-  one of the two.
-- **DinDjarin vs themando_doughnuts** both ship `models/players/dindjarin/`; themando wins the
-  glm, skin and sounds, so GustavoPredador's Din never shows. Same choice (rename DinDjarin's to
-  e.g. `dindjarin_gp`, or pick one).
-- **The two `scripts/kylo.bot`**: KyloRenTFAUpdated's replaces kyloV.1.02's and its bot points at
-  a model that does not exist (`KyloRen_Hood`). Recommended: an override `.bot` naming both bots
-  with distinct names and the existing models.
-- **SP skin limit**: a level holds 64 player skins; spawning more different models than that in
-  one SP map ends it with `G_FindConfigstringIndex: overflow`. Raising it changes the SP
-  configstring layout (and so savegames): leave it unless you want it raised.
+Nothing (the run 1 questions were answered on 2026-11-25, see Decisions).
 
 ## Steps
 
@@ -271,6 +260,13 @@ Not measured yet (step 8). Starting points, not approved:
 
 ## Decisions
 
+- Mod clashes (the user, 2026-11-25): **override pk3s**, built by the install script from the mods'
+  own files and a committed recipe, for BabyYoda vs YodaVM (BabyYoda's model renamed `babyyoda`)
+  and DinDjarin vs themando_doughnuts (DinDjarin's renamed, e.g. `dindjarin_gp`); a committed
+  override `.bot` giving the three "Kylo Ren" bots distinct names on their real models.
+- SP skin limit (64 per level, `MAX_CHARSKINS`): **left as is** (the user, 2026-11-25) - raising
+  it would change the SP configstring layout and old savegames.
+
 - `.npc` files are repaired when loaded (run 1): entries are flat, so a nested `{` becomes `}`, a
   `}` outside an entry is dropped and an entry open at the end of a file is closed, with a warning
   naming the file. Needed by Seven-Qui-Gon_Jinn's `quigon.npc` (three `{` typed for `}`), which hid
@@ -304,4 +300,5 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   `code/game/g_playermods.cpp` / `.h` (same function, `gi.Printf`), the call in `NPC_LoadParms`
   (`code/game/NPC_stats.cpp`), and in `G_ChangePlayerModel` (`code/game/g_client.cpp`) the
   stormtrooper fallback only when the name is not already `stormtrooper`.
-- (this commit) `[Tools] player mods: status ledger` - `PLAYER_MODS_STATUS.md` only.
+- `8e9ed33c` `[Tools] player mods: status ledger` - `PLAYER_MODS_STATUS.md` only.
+- (this commit) `[Tools] player mods: ledger - the user's decisions` - `PLAYER_MODS_STATUS.md` only.
