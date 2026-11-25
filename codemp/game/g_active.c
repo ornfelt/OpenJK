@@ -2888,6 +2888,7 @@ void ClientThink_real( gentity_t *ent ) {
 	pmove.gametype = level.gametype;
 	pmove.debugMelee = g_debugMelee.integer;
 	pmove.stepSlideFix = g_stepSlideFix.integer;
+	pmove.modelScaleBBox = (qboolean)!!g_modelScale.integer; // player mods: bbox follows iModelScale
 
 	pmove.noSpecMove = g_noSpecMove.integer;
 

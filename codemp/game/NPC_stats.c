@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "anims.h"
 #include "ghoul2/G2.h"
 #include "g_playermods.h" // player mods
+#include "g_modelscale.h" // player mods
 
 extern qboolean NPCsPrecached;
 
@@ -3520,6 +3521,10 @@ Ghoul2 Insert Start
 		{ //vehicles want their names fed in as models
 			//we put the $ in front to indicate a name and not a model
 			strcpy(playerModel, va("$%s", NPCName));
+		}
+		else
+		{
+			G_ModelScaleNPC( NPC, playerModel, customSkin ); // player mods: modelscale.cfg, bbox
 		}
 		SetupGameGhoul2Model(NPC, playerModel, customSkin);
 

@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "ui/menudef.h"
 #include "ghoul2/G2.h"
 #include "ui/ui_public.h"
+#include "game/bg_modelscale.h" // player mods
 
 /*
 =================
@@ -138,6 +139,8 @@ void CG_ParseServerinfo( void ) {
 	cgs.stepSlideFix = atoi( Info_ValueForKey( info, "g_stepSlideFix" ) );
 
 	cgs.noSpecMove = atoi( Info_ValueForKey( info, "g_noSpecMove" ) );
+
+	cgs.modelScaleBBox = (qboolean)!!atoi( Info_ValueForKey( info, MODELSCALE_SERVERINFO_KEY ) ); // player mods
 
 	cgs.siegeTeamSwitch = atoi( Info_ValueForKey( info, "g_siegeTeamSwitch" ) );
 

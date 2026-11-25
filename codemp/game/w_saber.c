@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "w_saber.h"
 #include "ai_main.h"
 #include "ghoul2/G2.h"
+#include "g_modelscale.h" // player mods
 
 #define SABER_BOX_SIZE 16.0f
 extern bot_state_t *botstates[MAX_CLIENTS];
@@ -2359,6 +2360,7 @@ static QINLINE qboolean G_G2TraceCollide(trace_t *tr, vec3_t lastValidStart, vec
 		if (g2Hit->client)
 		{
 			VectorCopy(g2Hit->client->ps.origin, g2HitOrigin);
+			g2HitOrigin[2] += G_ModelScaleDrawOffset( g2Hit ); // player mods: where the scaled model is drawn
 			angles[YAW] = g2Hit->client->ps.viewangles[YAW];
 		}
 		else
@@ -8469,6 +8471,7 @@ nextStep:
 	}
 
 	VectorCopy(self->client->ps.origin, properOrigin);
+	properOrigin[2] += G_ModelScaleDrawOffset( self ); // player mods: where the scaled model is drawn
 
 	//try to predict the origin based on velocity so it's more like what the client is seeing
 	VectorCopy(self->client->ps.velocity, addVel);

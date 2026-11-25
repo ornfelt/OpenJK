@@ -23,6 +23,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "g_local.h"
+#include "g_modelscale.h" // player mods
 #include "ghoul2/G2.h"
 #include "bg_saga.h"
 
@@ -2348,6 +2349,8 @@ qboolean ClientUserinfoChanged( int clientNum ) {
 		Q_strcat( buf, sizeof( buf ), va( "sdt\\%i\\", client->sess.siegeDesiredTeam ) );
 	}
 
+	G_ModelScaleUserinfoChanged( ent, model ); // player mods: the size of the model in use
+
 	trap->GetConfigstring( CS_PLAYERS+clientNum, oldClientinfo, sizeof( oldClientinfo ) );
 	trap->SetConfigstring( CS_PLAYERS+clientNum, buf );
 
@@ -3822,6 +3825,8 @@ void ClientSpawn(gentity_t *ent) {
 	*/
 	//Disabled. At least for now. Not sure if I'll want to do it or not eventually.
 
+	G_ModelScaleApply( ent, qfalse ); // player mods: the model size, bbox and view height
+
 	// run a client frame to drop exactly to the floor,
 	// initialize animations and other things
 	client->ps.commandTime = level.time - 100;
@@ -3903,6 +3908,8 @@ void ClientDisconnect( int clientNum ) {
 	// cleanup if we are kicking a bot that
 	// hasn't spawned yet
 	G_RemoveQueuedBotBegin( clientNum );
+
+	G_ModelScaleClientReset( clientNum ); // player mods: forget its /modelscale
 
 	ent = g_entities + clientNum;
 	if ( !ent->client || ent->client->pers.connected == CON_DISCONNECTED ) {

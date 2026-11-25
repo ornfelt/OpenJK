@@ -557,6 +557,8 @@ typedef struct pmove_s {
 	//rww - bg entitystate access method
 	bgEntity_t	*baseEnt; //base address of the entity array (g_entities or cg_entities)
 	int			entSize; //size of the struct (gentity_t or centity_t) so things can be dynamic
+
+	qboolean	modelScaleBBox; // player mods: a client's bbox and view height follow ps->iModelScale (bg_modelscale.c)
 } pmove_t;
 
 

@@ -1246,6 +1246,7 @@ void CG_PredictPlayerState( void ) {
 		cg_pmove.debugMelee = cgs.debugMelee;
 		cg_pmove.stepSlideFix = cgs.stepSlideFix;
 		cg_pmove.noSpecMove = cgs.noSpecMove;
+		cg_pmove.modelScaleBBox = cgs.modelScaleBBox; // player mods: same bbox as the server
 
 		cg_pmove.nonHumanoid = (pEnt->localAnimIndex > 0);
 

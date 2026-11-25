@@ -119,6 +119,9 @@ XCVAR_DEF( g_maxConnPerIP,				"3",			NULL,						CVAR_ARCHIVE,									qfalse )
 XCVAR_DEF( g_maxForceRank,				"7",			NULL,						CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_LATCH,		qfalse )
 XCVAR_DEF( g_maxGameClients,			"0",			NULL,						CVAR_SERVERINFO|CVAR_LATCH|CVAR_ARCHIVE,		qfalse )
 XCVAR_DEF( g_maxHolocronCarry,			"3",			NULL,						CVAR_LATCH,										qfalse )
+XCVAR_DEF( g_modelScale,				"1",			G_ModelScaleCvarChanged,	CVAR_SERVERINFO|CVAR_ARCHIVE,					qtrue ) // player mods
+XCVAR_DEF( g_modelScaleCmd,				"1",			G_ModelScaleCvarChanged,	CVAR_ARCHIVE,									qtrue ) // player mods
+XCVAR_DEF( g_modelScaleRange,			MODELSCALE_RANGE_DEFAULT,	G_ModelScaleCvarChanged,	CVAR_ARCHIVE,						qtrue ) // player mods
 XCVAR_DEF( g_motd,						"",				NULL,						CVAR_NONE,										qfalse )
 XCVAR_DEF( g_needpass,					"0",			NULL,						CVAR_SERVERINFO|CVAR_ROM,						qfalse )
 XCVAR_DEF( g_noSpecMove,				"0",			NULL,						CVAR_SERVERINFO,								qtrue )

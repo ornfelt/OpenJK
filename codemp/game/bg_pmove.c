@@ -28,6 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "bg_public.h"
 #include "bg_local.h"
 #include "ghoul2/G2.h"
+#include "bg_modelscale.h" // player mods
 
 #ifdef _GAME
 	#include "g_local.h"
@@ -51,6 +52,17 @@ extern saberInfo_t *BG_MySaber( int clientNum, int saberNum );
 
 pmove_t		*pm;
 pml_t		pml;
+
+// player mods: a scaled client's heights above the origin and half width (bg_modelscale.c)
+static float PM_ModelScaleFactor( void ) {
+	return BG_ModelScaleFactor( pm->ps, pm->modelScaleBBox );
+}
+static float PM_ScaledZ( float z ) {
+	return BG_ModelScaleZ( z, PM_ModelScaleFactor() );
+}
+static int PM_ScaledViewHeight( int viewHeight ) {
+	return BG_ModelScaleViewHeight( viewHeight, PM_ModelScaleFactor() );
+}
 
 bgEntity_t *pm_entSelf = NULL;
 bgEntity_t *pm_entVeh = NULL;
@@ -3493,7 +3505,7 @@ static void PM_NoclipMove( void ) {
 	float		wishspeed;
 	float		scale;
 
-	pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+	pm->ps->viewheight = PM_ScaledViewHeight( DEFAULT_VIEWHEIGHT ); // player mods: scaled
 
 	// friction
 
@@ -3608,7 +3620,7 @@ static int PM_TryRoll( void )
 	}
 
 	VectorSet(mins, pm->mins[0],pm->mins[1],pm->mins[2]+STEPSIZE);
-	VectorSet(maxs, pm->maxs[0],pm->maxs[1],pm->ps->crouchheight);
+	VectorSet(maxs, pm->maxs[0],pm->maxs[1],PM_ScaledZ( pm->ps->crouchheight )); // player mods: scaled
 
 	VectorSet(fwdAngles, 0, pm->ps->viewangles[YAW], 0);
 
@@ -4316,7 +4328,7 @@ void PM_CheckFixMins( void )
 
 		VectorSet( end, pm->ps->origin[0], pm->ps->origin[1], pm->ps->origin[2]+MINS_Z );
 		VectorSet( curMins, pm->mins[0], pm->mins[1], 0 );
-		VectorSet( curMaxs, pm->maxs[0], pm->maxs[1], pm->ps->standheight );
+		VectorSet( curMaxs, pm->maxs[0], pm->maxs[1], PM_ScaledZ( pm->ps->standheight ) ); // player mods: scaled
 
 		pm->trace( &trace, pm->ps->origin, curMins, curMaxs, end, pm->ps->clientNum, pm->tracemask );
 		if ( !trace.allsolid && !trace.startsolid )
@@ -4383,7 +4395,7 @@ static qboolean PM_CanStand ( void )
         {
 			vec3_t start, end;//
 			VectorSet( start, x, y, pm->maxs[2] );
-			VectorSet( end, x, y, pm->ps->standheight );
+			VectorSet( end, x, y, PM_ScaledZ( pm->ps->standheight ) ); // player mods: scaled
 
 			VectorAdd (start, pm->ps->origin, start);
 			VectorAdd (end, pm->ps->origin, end);
@@ -4460,12 +4472,12 @@ static void PM_CheckDuck (void)
 	else
 	{
 		if (pm->ps->clientNum < MAX_CLIENTS)
-		{
-			pm->mins[0] = -15;
-			pm->mins[1] = -15;
+		{ // player mods: the width follows the model scale
+			pm->mins[0] = -BG_ModelScaleHalfWidth( PM_ModelScaleFactor() );
+			pm->mins[1] = -BG_ModelScaleHalfWidth( PM_ModelScaleFactor() );
 
-			pm->maxs[0] = 15;
-			pm->maxs[1] = 15;
+			pm->maxs[0] = BG_ModelScaleHalfWidth( PM_ModelScaleFactor() );
+			pm->maxs[1] = BG_ModelScaleHalfWidth( PM_ModelScaleFactor() );
 		}
 
 		if ( PM_CheckDualForwardJumpDuck() )
@@ -4483,15 +4495,15 @@ static void PM_CheckDuck (void)
 
 		if (pm->ps->pm_type == PM_DEAD && pm->ps->clientNum < MAX_CLIENTS)
 		{
-			pm->maxs[2] = -8;
-			pm->ps->viewheight = DEAD_VIEWHEIGHT;
+			pm->maxs[2] = PM_ScaledZ( -8 ); // player mods: scaled
+			pm->ps->viewheight = PM_ScaledViewHeight( DEAD_VIEWHEIGHT );
 			return;
 		}
 
 		if (BG_InRoll(pm->ps, pm->ps->legsAnim) && !BG_KickingAnim(pm->ps->legsAnim))
 		{
-			pm->maxs[2] = pm->ps->crouchheight; //CROUCH_MAXS_2;
-			pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+			pm->maxs[2] = PM_ScaledZ( pm->ps->crouchheight ); //CROUCH_MAXS_2; // player mods: scaled
+			pm->ps->viewheight = PM_ScaledViewHeight( DEFAULT_VIEWHEIGHT );
 			pm->ps->pm_flags &= ~PMF_DUCKED;
 			pm->ps->pm_flags |= PMF_ROLLING;
 			return;
@@ -4499,7 +4511,7 @@ static void PM_CheckDuck (void)
 		else if (pm->ps->pm_flags & PMF_ROLLING)
 		{
 			if ( PM_CanStand() ) {
-				pm->maxs[2] = pm->ps->standheight;
+				pm->maxs[2] = PM_ScaledZ( pm->ps->standheight ); // player mods: scaled
 				pm->ps->pm_flags &= ~PMF_ROLLING;
 			}
 		}
@@ -4515,27 +4527,28 @@ static void PM_CheckDuck (void)
 			if (pm->ps->pm_flags & PMF_DUCKED)
 			{
 				if ( PM_CanStand() ) {
-					pm->maxs[2] = pm->ps->standheight;
+					pm->maxs[2] = PM_ScaledZ( pm->ps->standheight ); // player mods: scaled
 					pm->ps->pm_flags &= ~PMF_DUCKED;
 				}
 			}
 		}
 	}
 
+	// player mods: the heights follow the model scale
 	if (pm->ps->pm_flags & PMF_DUCKED)
 	{
-		pm->maxs[2] = pm->ps->crouchheight;//CROUCH_MAXS_2;
-		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
+		pm->maxs[2] = PM_ScaledZ( pm->ps->crouchheight );//CROUCH_MAXS_2;
+		pm->ps->viewheight = PM_ScaledViewHeight( CROUCH_VIEWHEIGHT );
 	}
 	else if (pm->ps->pm_flags & PMF_ROLLING)
 	{
-		pm->maxs[2] = pm->ps->crouchheight;//CROUCH_MAXS_2;
-		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+		pm->maxs[2] = PM_ScaledZ( pm->ps->crouchheight );//CROUCH_MAXS_2;
+		pm->ps->viewheight = PM_ScaledViewHeight( DEFAULT_VIEWHEIGHT );
 	}
 	else
 	{
-		pm->maxs[2] = pm->ps->standheight;//DEFAULT_MAXS_2;
-		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+		pm->maxs[2] = PM_ScaledZ( pm->ps->standheight );//DEFAULT_MAXS_2;
+		pm->ps->viewheight = PM_ScaledViewHeight( DEFAULT_VIEWHEIGHT );
 	}
 }
 
@@ -5353,8 +5366,8 @@ static void PM_Footsteps( void ) {
 			pm->ps->legsAnim = 0;
 			PM_SetAnim(SETANIM_BOTH,rolled,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD);
 			PM_AddEventWithParm( EV_ROLL, 0 );
-			pm->maxs[2] = pm->ps->crouchheight;//CROUCH_MAXS_2;
-			pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
+			pm->maxs[2] = PM_ScaledZ( pm->ps->crouchheight );//CROUCH_MAXS_2; // player mods: scaled
+			pm->ps->viewheight = PM_ScaledViewHeight( DEFAULT_VIEWHEIGHT );
 			pm->ps->pm_flags &= ~PMF_DUCKED;
 			pm->ps->pm_flags |= PMF_ROLLING;
 		}

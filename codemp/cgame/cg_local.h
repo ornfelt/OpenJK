@@ -1548,6 +1548,7 @@ typedef struct cgs_s {
 	int				debugMelee;
 	int				stepSlideFix;
 	int				noSpecMove;
+	qboolean		modelScaleBBox; // player mods: the server's pmove scales the player bbox
 	int				dmflags;
 	int				fraglimit;
 	int				duel_fraglimit;

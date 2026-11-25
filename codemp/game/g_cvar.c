@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_local.h"
 #include "game/bg_public.h"
 #include "qcommon/game_version.h"
+#include "g_modelscale.h" // player mods
 
 //
 // Cvar callbacks

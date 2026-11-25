@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // this file holds commands that can be executed by the server console, but not remote clients
 
 #include "g_local.h"
+#include "g_modelscale.h" // player mods
 
 /*
 ==============================================================================
@@ -504,6 +505,10 @@ qboolean	ConsoleCommand( void ) {
 	svcmd_t	*command = NULL;
 
 	trap->Argv( 0, cmd, sizeof( cmd ) );
+
+	if ( G_ModelScaleConsoleCommand() ) { // player mods: modelscale <client> <n>, modelscales
+		return qtrue;
+	}
 
 	command = (svcmd_t *)Q_LinearSearch( cmd, svcmds, numsvcmds, sizeof( svcmds[0] ), svcmdcmp );
 	if ( !command )
