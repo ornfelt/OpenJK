@@ -195,7 +195,7 @@ void G_ModelScaleUserinfoChanged( gentity_t *ent, const char *model ) {
 
 void G_ModelScaleNPC( gentity_t *npc, const char *model, const char *skin ) {
 	gclient_t	*client = npc->client;
-	int			scale, npcScale;
+	int			scale, npcScale, widthScale, standScale, crouchScale;
 	float		factor, halfWidth;
 
 	if ( !g_modelScale.integer || !client ) {
@@ -207,26 +207,28 @@ void G_ModelScaleNPC( gentity_t *npc, const char *model, const char *skin ) {
 	if ( !scale ) {
 		scale = npcScale;
 	}
-	if ( scale == MODELSCALE_DEFAULT ) {
-		client->ps.iModelScale = npc->s.iModelScale = 0;
-		VectorClear( npc->modelScale );
-		return;
+	if ( scale == MODELSCALE_DEFAULT && npcScale == MODELSCALE_DEFAULT ) {
+		return; // as before
 	}
 
 	factor = scale / MODELSCALE_PERCENT;
-	client->ps.iModelScale = npc->s.iModelScale = scale;
-	VectorSet( npc->modelScale, factor, factor, factor );
-
-	// a bbox the .npc file sized itself (width / height / crouchheight) is left as it is
-	if ( npc->r.maxs[0] != MODELSCALE_HALF_WIDTH || npc->r.mins[2] != DEFAULT_MINS_2 || npc->r.maxs[2] != DEFAULT_MAXS_2
-		|| client->ps.standheight != DEFAULT_MAXS_2 || client->ps.crouchheight != CROUCH_MAXS_2 ) {
-		return;
+	client->ps.iModelScale = npc->s.iModelScale = (scale == MODELSCALE_DEFAULT) ? 0 : scale;
+	if ( client->ps.iModelScale ) {
+		VectorSet( npc->modelScale, factor, factor, factor );
+	} else {
+		VectorClear( npc->modelScale );
 	}
-	halfWidth = BG_ModelScaleHalfWidth( factor );
+
+	// width, stand and crouch height each: a value the .npc file set belongs to its scale, a default
+	// one to 100; both are rescaled from there (so at the .npc scale the file's values stay)
+	widthScale = (npc->r.maxs[0] == MODELSCALE_HALF_WIDTH) ? MODELSCALE_DEFAULT : npcScale;
+	standScale = (client->ps.standheight == DEFAULT_MAXS_2) ? MODELSCALE_DEFAULT : npcScale;
+	crouchScale = (client->ps.crouchheight == CROUCH_MAXS_2) ? MODELSCALE_DEFAULT : npcScale;
+	halfWidth = npc->r.maxs[0] * scale / widthScale;
+	client->ps.standheight = BG_ModelScaleViewHeight( client->ps.standheight, (float)scale / standScale );
+	client->ps.crouchheight = BG_ModelScaleViewHeight( client->ps.crouchheight, (float)scale / crouchScale );
 	VectorSet( npc->r.mins, -halfWidth, -halfWidth, DEFAULT_MINS_2 );
-	VectorSet( npc->r.maxs, halfWidth, halfWidth, BG_ModelScaleZ( DEFAULT_MAXS_2, factor ) );
-	client->ps.standheight = BG_ModelScaleViewHeight( DEFAULT_MAXS_2, factor );
-	client->ps.crouchheight = BG_ModelScaleViewHeight( CROUCH_MAXS_2, factor );
+	VectorSet( npc->r.maxs, halfWidth, halfWidth, client->ps.standheight );
 }
 
 float G_ModelScaleDrawOffset( const gentity_t *ent ) {
@@ -364,6 +366,16 @@ static void Svcmd_ModelScales_f( void ) {
 		trap->Print( "  %2d %-24s %3d (%s) bbox %.1f..%.1f x %.1f..%.1f view %d %s\n", i, modelScaleClients[i].model,
 			G_ModelScaleCurrent( cl ), source, g_entities[i].r.mins[0], g_entities[i].r.maxs[0], g_entities[i].r.mins[2],
 			g_entities[i].r.maxs[2], cl->ps.viewheight, cl->pers.netname );
+	}
+	for ( i = MAX_CLIENTS; i < level.num_entities; i++ ) {
+		const gentity_t *npc = &g_entities[i];
+
+		if ( !npc->inuse || !npc->client || npc->s.eType != ET_NPC ) {
+			continue;
+		}
+		trap->Print( "  npc %4d %-20s %3d bbox %.1f..%.1f x %.1f..%.1f stand %d crouch %d\n", i, npc->NPC_type ? npc->NPC_type : "?",
+			G_ModelScaleCurrent( npc->client ), npc->r.mins[0], npc->r.maxs[0], npc->r.mins[2], npc->r.maxs[2],
+			npc->client->ps.standheight, npc->client->ps.crouchheight );
 	}
 }
 

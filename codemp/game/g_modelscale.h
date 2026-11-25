@@ -39,7 +39,8 @@ void G_ModelScaleUserinfoChanged( gentity_t *ent, const char *model );
 // spawn. Returns qfalse when it waited.
 qboolean G_ModelScaleApply( gentity_t *ent, qboolean checkFit );
 
-// an npc's scale: modelscale.cfg's before the .npc file's; a default bbox scales with it
+// an npc's scale: modelscale.cfg's before the .npc file's; its bbox follows (a width / height the
+// .npc file set belongs to the .npc scale, a default one to 100)
 void G_ModelScaleNPC( gentity_t *npc, const char *model, const char *skin );
 
 // the height the cgame raises the entity's scaled model by: the server's ghoul2 bolts (saber) and
