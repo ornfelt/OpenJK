@@ -158,6 +158,8 @@ set(MPGameCommonFiles
 	"${MPDir}/qcommon/tags.h"
 
 	${SharedCommonFiles}
+	"${SharedDir}/qcommon/q_modelscale.h" # player mods
+	"${SharedDir}/qcommon/q_modelscale.c"
 	)
 source_group("common" FILES ${MPGameCommonFiles})
 set(MPGameFiles ${MPGameFiles} ${MPGameCommonFiles})

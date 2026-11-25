@@ -64,7 +64,7 @@ void G_ModelScaleInit( void ) {
 	trap->FS_Close( f );
 	modelScaleFileBuf[len] = '\0';
 
-	BG_ModelScaleParse( &modelScaleTable, modelScaleFileBuf, MODELSCALE_CFG_FILE );
+	Q_ModelScaleParse( &modelScaleTable, modelScaleFileBuf, MODELSCALE_CFG_FILE, Com_Printf );
 	trap->Print( "%s: %d model sizes\n", MODELSCALE_CFG_FILE, modelScaleTable.numEntries );
 }
 
@@ -76,7 +76,7 @@ void G_ModelScaleClientReset( int clientNum ) {
 }
 
 static void G_ModelScaleRange( int *min, int *max ) {
-	BG_ModelScaleParseRange( g_modelScaleRange.string, min, max );
+	Q_ModelScaleParseRange( g_modelScaleRange.string, min, max );
 }
 
 // the scale the precedence gives the client and where it came from
@@ -87,9 +87,9 @@ static int G_ModelScaleWanted( int clientNum, const char **source ) {
 	if ( g_modelScaleCmd.integer && mc->cmdScale ) {
 		G_ModelScaleRange( &min, &max );
 		*source = "/modelscale";
-		return BG_ModelScaleClamp( mc->cmdScale, min, max );
+		return Q_ModelScaleClamp( mc->cmdScale, min, max );
 	}
-	scale = BG_ModelScaleLookup( &modelScaleTable, mc->model, NULL );
+	scale = Q_ModelScaleLookup( &modelScaleTable, mc->model, NULL );
 	if ( scale ) {
 		*source = MODELSCALE_CFG_FILE;
 		return scale;
@@ -203,7 +203,7 @@ void G_ModelScaleNPC( gentity_t *npc, const char *model, const char *skin ) {
 	}
 
 	npcScale = client->ps.iModelScale ? client->ps.iModelScale : MODELSCALE_DEFAULT;
-	scale = BG_ModelScaleLookup( &modelScaleTable, model, skin );
+	scale = Q_ModelScaleLookup( &modelScaleTable, model, skin );
 	if ( !scale ) {
 		scale = npcScale;
 	}
@@ -274,7 +274,7 @@ static qboolean G_ModelScaleSetCmd( gentity_t *ent, int scale ) {
 	int min, max;
 
 	G_ModelScaleRange( &min, &max );
-	modelScaleClients[ent->s.number].cmdScale = scale ? BG_ModelScaleClamp( scale, min, max ) : 0;
+	modelScaleClients[ent->s.number].cmdScale = scale ? Q_ModelScaleClamp( scale, min, max ) : 0;
 	return G_ModelScaleApply( ent, qtrue );
 }
 
