@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "b_public.h"
 #include "anims.h"
 #include "ghoul2/G2.h"
+#include "g_playermods.h" // player mods
 
 extern qboolean NPCsPrecached;
 
@@ -3598,6 +3599,12 @@ void NPC_LoadParms( void )
 			npcParseBuffer[len] = 0;
 
 			len = COM_Compress( npcParseBuffer );
+
+			// player mods: a mod's unbalanced .npc file must not hide every entry stored after it
+			if ( G_RepairNPCBraces( npcParseBuffer, holdChar ) && totallen + len + 2 < MAX_NPC_DATA_SIZE ) {
+				npcParseBuffer[len++] = '}';
+				npcParseBuffer[len] = '\0';
+			}
 
 			strcat( marker, npcParseBuffer );
 			strcat(marker, "\n");
