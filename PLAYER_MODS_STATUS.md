@@ -6,37 +6,38 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-25 (run 2, Linux): step 2 done; the step 1 menu columns filled.
+2026-11-25 (run 3, Linux): steps 3 and 4 done - the player model size in MP.
 
-- Override pk3 for the clashes (the user's choice): recipes in `tools/player_mods/override/`
-  (`babyyoda`, `dindjarin_gp`, `kylo_bots`), `build_overrides.py` builds
-  `~playermods_overrides.pk3` from the mods' own files, the install scripts install it with the
-  manifest. Tested in MP and SP: Grogu and GustavoPredador's Din show next to YodaVM's Yoda and
-  themando's Din, both npcs spawn, the three Kylo bots join under their own names on their real
-  models, "Baby Yoda" bot joins.
-- SP and MP engines merge every pk3's copy of a string file (`FS_ForEachFileCopy` + `SE_Load`), and
-  the species list falls back to the dir name: the SP character menu names all 18 species
-  (`sp_menu_check.sh`).
-- MP renderers (rd-vanilla, rd-rend2) blank a stray `}` in a shader file instead of dropping the
-  file (SWTOR Revan's shaders load); MP cgame takes the one-word line of a `sounds.cfg` as the sound
-  dir (themando's Din has its sounds).
-- `mp_menu_check.sh` pages the MP player model grid: every mod model with icons is listed.
-- No new warnings (full build diffed against `build/warnings_baseline.txt`); no mods: SP, MP
-  (rd-vanilla, rd-rend2) start, load a map and quit as before.
+- `modelscale.cfg` (JA++'s format; JA++'s own file loads unchanged), the cvars `g_modelScale`,
+  `g_modelScaleCmd`, `g_modelScaleRange`, `/modelscale [n|default]`, the console / rcon commands
+  `modelscale <client> <n|default>` and `modelscales` (table plus every client's scale, bbox and
+  view height). Bots get their model's size like players; npcs take the table before their `.npc`
+  scale.
+- pmove scales a client's bbox and view heights from `iModelScale` on a server that says so
+  (serverinfo `g_modelScale`); the fork's cgame predicts the same box. The server's saber bolts
+  and ghoul2 hit origin are raised like the drawn model.
+- cgame: the third-person camera (range, offsets) and the sprites over a head follow the size
+  (`cg_thirdPersonModelScale`).
+- The default `tools/player_mods/base/modelscale.cfg` (installed by the install script): JA++'s
+  entries, the `japp.diff` ones and the mods' `.npc` scales as starting points (step 8 measures).
+- Tested: dedicated with bots (table sizes, rcon clamp, `g_modelScale` off / on), listen server
+  walking / crouching / jumping at 50 % and 150 % with `cg_showmiss 1` (no misses), the server's
+  and the drawn saber muzzle height within 1 unit at 50 / 100 / 135 % (a temporary print, not
+  committed), camera screenshots, JA++'s file parsed, no-mods MP / dedicated / SP runs, no new
+  warnings in a full build.
 
 ## Next
 
-1. Step 3, MP model scale - game: `bg_modelscale.c` (the `modelscale.cfg` parser, JA++'s
-   format), `g_modelscale.c` (cvars, table, `/modelscale`, rcon `modelscale` / `modelscales`),
-   applied in `ClientSpawn` / `ClientUserinfoChanged`: `s.iModelScale`, `ps.iModelScale`,
-   `ent->modelScale`, bbox and view heights; bots and npcs by the same precedence. Read JA++'s
-   `lua/sv/modelscale/plugin.lua`, `Entity_Scale` and `cg_players.cpp` first. The default
-   `modelscale.cfg` goes in `tools/player_mods/base/` (the install script already copies that dir).
-2. Small leftovers, when convenient: the SP `playermodel` T-pose (see Other findings), Revan's ghost
-   skins (translucency), the MP npc screenshots (the player hides small npcs - spawn further or
-   use `cg_thirdPersonRange`), the MP custom-character species names (merge in MP not seen on
-   screen yet), `inventory.py` knowing the override recipes (it still reports the clashes it finds
-   in the mods themselves).
+1. Step 5, SP model scale: the same table, cvars and command in `code/game` (`g_client.cpp`'s
+   `G_ChangePlayerModel` / character creation, `NPC_stats.cpp`'s `scale`), `s.modelScale` on the
+   player, bbox, view height, camera (`code/cgame`), kept in the savegame. Reuse the parser of
+   `codemp/game/bg_modelscale.c` (SP builds C++: a copy in `code/game` or the file compiled as
+   C++ - decide and record). SP has no prediction; check how SP draws a scaled player (whether it
+   raises the model like the MP cgame) before choosing the bbox rule.
+2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
+   screenshots (spawn the npc in front of the camera: `cg_thirdPersonAngle 0` and a spawn
+   distance), the MP custom-character species names, `inventory.py` knowing the override recipes,
+   the ui player model preview showing the scale (optional).
 
 ## Waiting for the user
 
@@ -49,8 +50,8 @@ Nothing (the run 1 questions were answered on 2026-11-25, see Decisions).
 | 0 | Setup: ledger, build, inventory, install script, mod table | done |
 | 1 | Baseline matrix with the unchanged build | done (the MP npc screenshots are a leftover, see Next) |
 | 2 | Loading fixes (limits, SP string merge, conflicts, ...) | done: `.npc` brace repair, SP playermodel recursion, string file merge + species fallback, override pk3 for the clashes, MP shader stray brace, MP `sounds.cfg` |
-| 3 | MP model scale - game | todo |
-| 4 | MP model scale - cgame and ui | todo |
+| 3 | MP model scale - game | done (run 3) |
+| 4 | MP model scale - cgame and ui | done (run 3); the ui model preview does not show the scale (optional, left) |
 | 5 | SP model scale | todo |
 | 6 | Custom skeletons in MP (T_Yoda) | todo |
 | 7 | Menus | todo |
@@ -216,7 +217,7 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | DinDjarin | ok via override: `dindjarin_gp` | n/a | ok via override | ok via override: `dindjarin_gp` (GustavoPredador's, caped) | ok (listed) | n/a | ok via override (log) | n/a | ok (`boba`) |
 | DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | todo | ok |
 | DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | stock | ok |
-| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins (no scale: human size) | ok (listed) | ok | ok (fix1) | todo | ok |
+| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins; 135 % from `modelscale.cfg` since run 3 | ok (listed) | ok | ok (fix1) | todo | ok |
 | hs_anakin | ok (fix1) | ok (fix2): "Anakin Skywalker" | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons: not in the menu) | ok (listed) | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
 | hs_dookuja | ok (fix1) | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (`.sab` typos `saberOn`, `munberBlades` ignored) | ok |
 | hs_kenobi_rots | ok (fix1) | ok (fix2): "Obi-Wan Kenobi" | ok (fix1) | ok, 6 skins (`jedi_kenobi` untextured if forced) | ok (listed) | ok | ok (fix1) | ok (same `.sab` typos) | ok |
@@ -229,10 +230,10 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | SWTORRevanV1-04 | ok (fix1) | ok (fix2): "swtorrevan" (dir name) | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
 | T_Anavader | ok (fix1) | ok (fix2): "Anakin Skywalker", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
 | T_luke_rotj_V2 | ok (fix1) | ok (fix2): "Luke ROTJ" | ok (fix1) | ok, 9 skins | ok (listed) | ok | ok | ok | ok |
-| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok but human size; `t_yoda` (SP glm, own `.gla`): Kyle | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
+| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 45 % from `modelscale.cfg` since run 3; `t_yoda` (SP glm, own `.gla`): Kyle | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
 | themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok | ok | n/a | ok since fix4 (`sound/chars/themando`) |
-| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins (human size) | ok (listed) | ok | ok | todo | ok |
-| yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee` (human size) | ok (listed) | ok | ok | ok | ok |
+| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins; 120 % since run 3 | ok (listed) | ok | ok | todo | ok |
+| yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee`; `yodavm` 50 % since run 3 (`yodaflee` has no entry) | ok (listed) | ok | ok | ok | ok |
 | zKyloRenKv2 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren K" | ok | broken: `kylo_ren` not installed (needs jkhub 2214) | ok |
 | ZZ- Luke Skywalker Trainer v1.5 | ok (fix1), 3 skins | n/a | ok (fix1) | ok, 3 skins | ok (listed) | n/a | ok | stock | ok |
 | zzJTempleGv3 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | n/a | ok | ok | ok |
@@ -243,8 +244,8 @@ Other findings:
   models/players/t_yoda/model_default.skin to set 1097-64" after ~60 different models in one map,
   an `ERR_DROP`). The test cfgs now reload the map every 20 checks. Raising the limit would change
   the SP configstring layout (savegames) - only after asking.
-- MP shows every skin of every model; the Yodas, Grievous and Vader are human size (no scaling in
-  MP yet - steps 3-4).
+- MP shows every skin of every model; since run 3 the models in `modelscale.cfg` are drawn,
+  boxed and predicted at their size.
 - MP: the custom character species list (the MP UI's "Custom" model) gets the same names merge
   and fallback, not seen on screen yet.
 - SP `playermodel`: several shots taken ~1.7 s after the switch show the new model in a T-pose
@@ -254,27 +255,62 @@ Other findings:
 
 ## Sizes
 
-Not measured yet (step 8). Starting points, not approved:
+Not measured yet (step 8). The default `tools/player_mods/base/modelscale.cfg` holds the starting
+points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no entry. Not approved.
 
-| Model | Scale | Source | Approved |
-| --- | --- | --- | --- |
-| chewbacca | 1.18 | JA++ `modelscale.cfg` | no |
-| desann | 1.15 | JA++ | no |
-| jan | 0.94 | JA++ | no |
-| jawa | 0.8 | JA++ | no |
-| monmothma | 0.84 | JA++ | no |
-| tavion, tavion_new | 0.95 | JA++ | no |
-| yoda, yodavm, babyyoda | 0.5 | `japp.diff` | no |
-| yodavm (npc yodavm / yodaoz / yodaepit / yodapack) | 0.50 | `.npc` | no |
-| yodavm (npc babyyoda) | 0.37 | `.npc` | no |
-| t_yoda (npc T_yoda) | 0.45 | `.npc` | no |
-| grievous (npc greeveevm / playergreevee) | 1.35 | `.npc` | no |
-| psdarthmalgus (npc Darth_Malgus) | 1.15 | `.npc` | no |
-| t_vader (npc T_vader*) | 1.20 | `.npc` | no |
-| kylo_ren (npc kyloren) | 1.20 | `.npc` | no |
-| vadervmm (npc vadervmm / vadersingle) | 1.20 | `.npc` | no |
+| Model | Scale | Source | In cfg | Approved |
+| --- | --- | --- | --- | --- |
+| chewbacca | 1.18 | JA++ `modelscale.cfg` | yes | no |
+| desann | 1.15 | JA++ | yes | no |
+| jan | 0.94 | JA++ | yes | no |
+| jawa | 0.8 | JA++ | yes | no |
+| monmothma | 0.84 | JA++ | yes | no |
+| tavion, tavion_new | 0.95 | JA++ | yes | no |
+| yoda, yodavm, babyyoda | 0.5 | `japp.diff` | yes | no |
+| yodavm (npc yodavm / yodaoz / yodaepit / yodapack) | 0.50 | `.npc` | (yodavm) | no |
+| babyyoda (npc babyyoda) | 0.37 | `.npc`; the cfg's `japp.diff` 0.5 wins over it for now - ask in step 8 | 0.5 | no |
+| t_yoda, t_yoda_mp (npc T_yoda) | 0.45 | `.npc` | yes | no |
+| grievous (npc greeveevm / playergreevee) | 1.35 | `.npc` | yes | no |
+| psdarthmalgus (npc Darth_Malgus) | 1.15 | `.npc` | yes | no |
+| t_vader (npc T_vader*) | 1.20 | `.npc` | yes | no |
+| kylo_ren (npc kyloren) | 1.20 | `.npc` | yes | no |
+| vadervmm (npc vadervmm / vadersingle) | 1.20 | `.npc` | yes | no |
 
 ## Decisions
+
+- Model scale names (run 3): cvars `g_modelScale` (default 1, serverinfo, archived),
+  `g_modelScaleCmd` (default 1, as in `japp.diff`), `g_modelScaleRange` (default `"30 200"`:
+  Grogu to past Grievous; hard limits 10-250, 250 keeping the stand view height inside
+  `ps.viewheight`'s signed 8 bits), cgame `cg_thirdPersonModelScale` (default 1); commands
+  `/modelscale [n|default]` (`0` also resets), `modelscale <client> <n|default>` and `modelscales`
+  on the server console / rcon. On a listen server `modelscale <n>` (one argument) goes on to the
+  local player. JA++'s names had the `japp_` prefix; ours follow OpenJK's `g_` / `cg_`.
+- `modelscale.cfg`: JA++'s format plus `model/skin` keys (the skin entry wins); a factor is
+  rounded to whole percent (JA++ floors: its 1.18 gives 117, ours 118); bad pairs are skipped with
+  a warning; up to 512 models, 64 KB; the topmost copy wins (no merge across pk3s).
+- Precedence (players and bots): `/modelscale` (only while `g_modelScaleCmd` is on, clamped to the
+  range), the cfg, 100. Npcs: the cfg, the `.npc` `scale`, 100. A `/modelscale` value lives until
+  `default`, a disconnect or a map change (no session field - the game module reloads per map).
+- The bbox (run 3): the feet stay at `MINS_Z` (-24), as every JA cgame raises a scaled model by
+  `24 * (s - 1)`; width `15 * s`, stand / crouch / dead heights and view heights scaled above the
+  feet. pmove computes them from `ps.iModelScale` (networked) when `pmove_t.modelScaleBBox` is set
+  - by `g_modelScale` on the server, by the serverinfo key `g_modelScale` in the cgame (OpenJK
+  asks forks not to add legacy-fix bits). `ps.standheight` / `crouchheight` stay unscaled (they
+  go out as unsigned 10 bits; a scaled crouch height is negative below 60 %).
+  A retail / JA++ client on a fork server predicts the standard box and view height for a scaled
+  player (small misses at ceilings and walls, its own camera at the standard height); a fork client
+  on a JA++ server predicts the standard box like that server (the key is missing).
+- Growing (`/modelscale`, a model change, a cvar change) is refused while the bigger box would
+  start in solid, with a message; it then applies at the next spawn. Spawning does not check.
+- Npc bbox: scaled with the model only when the `.npc` file left it at the default (no `width` /
+  `height` / `crouchheight`); a file that sizes it keeps its own.
+- Server ghoul2 (run 3): the saber bolts / render bolts (`properOrigin` in
+  `WP_SaberPositionUpdate`) and the ghoul2 hit origin (`G_G2TraceCollide`) are raised by the same
+  `24 * (s - 1)` the cgame draws with; checked within 1 unit. Other server-side bolt users (npc AI
+  bolts, dismemberment, `g_combat` limb positions) still use the plain origin.
+- Saber length is not scaled: the blade comes from the `.sab` file (YodaVM's and T_Yoda's sabers
+  are already short), and a longer reach for big models would change the fight.
+- The third-person camera's range and offsets scale with the viewed player (cosmetic, any server).
 
 - The override pk3 is named `~playermods_overrides.pk3`: `FS_PathCmp` folds letters to upper
   case, so `_` (0x5F) beats `z`; only a leading `~` sorts after every mod pk3 (`zzzzzz_themando`,
@@ -347,4 +383,30 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
 - `4909f4cc` `[MP] player mods: tolerate an extra first line in sounds.cfg` - new
   `codemp/cgame/cg_playermods.c` / `.h` (`CG_PickSoundsCfgDir`), one call in `CG_LoadCISounds`
   (`cg_players.c`) right after reading the file; cgame CMake list.
-- (this commit) `[Tools] player mods: ledger, run 2` - `PLAYER_MODS_STATUS.md`, `mp_menu_check.sh`.
+- `852bd794` `[Tools] player mods: ledger, run 2` - `PLAYER_MODS_STATUS.md`, `mp_menu_check.sh`.
+- `84dbd93b` `[MP] player mods: modelscale.cfg table, /modelscale and the scaled player bbox` -
+  new `codemp/game/bg_modelscale.c` / `.h` (in game and cgame: constants, `BG_ModelScaleParse` -
+  whitespace tokens, `//` and `/* */` anywhere, factor -> `floor(f * 100 + 0.5)`, digits and one
+  dot only, hard clamp 10-250, later key replaces, 512 max; `BG_ModelScaleLookup` "model/skin"
+  then "model", case-insensitive; range parse; `BG_ModelScaleFactor` 1 unless enabled, clientNum <
+  MAX_CLIENTS and iModelScale not 0 / 100; `BG_ModelScaleZ` = MINS_Z + (z - MINS_Z) * f; view
+  height rounded half up; half width 15 * f; draw offset -MINS_Z * (f - 1)), new
+  `codemp/game/g_modelscale.c` / `.h` (table, per-client model / command scale, apply with the fit
+  trace, npc rule, cvar callback, `/modelscale`, console `modelscale` (argc 3, else falls through
+  on a listen server) / `modelscales`). Edits: `pmove_t.modelScaleBBox` (`bg_public.h`), every
+  bbox / view height site of `PM_NoclipMove`, the roll check, `PM_CheckFixMins`, `PM_CanStand`,
+  `PM_CheckDuck` and the roll in `PM_Footsteps` (`bg_pmove.c`); `g_active.c` sets the flag;
+  `g_client.c` (`ClientUserinfoChanged` before the configstring, `ClientSpawn` before the first
+  `ClientThink`, `ClientDisconnect`), `g_cmds.c` table, `g_svcmds.c` `ConsoleCommand`, `g_main.c`
+  init after `NPC_InitGame`, `g_xcvar.h` (3 cvars) + `g_cvar.c` include, `NPC_stats.c` (before
+  `SetupGameGhoul2Model`, not vehicles), `w_saber.c` (`properOrigin`, `g2HitOrigin`), cgame
+  `cgs.modelScaleBBox` from serverinfo (`cg_servercmds.c`, `cg_local.h`) into `cg_pmove`
+  (`cg_predict.c`); CMake lists.
+- `fd6b367c` `[MP] player mods: third-person camera and head sprites follow the model scale` - new
+  `codemp/cgame/cg_modelscale.c` / `.h` (`CG_ModelScaleCameraFactor` from
+  `cg.predictedPlayerState.iModelScale`, 1 on a vehicle or with `cg_thirdPersonModelScale 0`;
+  `CG_ModelScaleAboveOrigin` = height * `cent->modelScale[2]`), `cg_view.c` (vert offset, range,
+  horz offset multiplied), `cg_players.c` (`CG_PlayerFloatSprite` +48), `cg_xcvar.h`, CMake list.
+- (this commit) `[Tools] player mods: default modelscale.cfg, ledger run 3` -
+  `tools/player_mods/base/modelscale.cfg`, `PLAYER_MODS_STATUS.md`; nothing to port (the cfg is
+  data the Rust port reads the same way).
