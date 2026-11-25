@@ -87,6 +87,7 @@ set(SPGameGameFiles
 	"${SPDir}/game/g_navnew.cpp"
 	"${SPDir}/game/g_object.cpp"
 	"${SPDir}/game/g_objectives.cpp"
+	"${SPDir}/game/g_modelscale.cpp"
 	"${SPDir}/game/g_playermods.cpp"
 	"${SPDir}/game/g_rail.cpp"
 	"${SPDir}/game/g_ref.cpp"
@@ -165,6 +166,7 @@ set(SPGameGameFiles
 	"${SPDir}/game/fields.h"
 	"${SPDir}/game/g_functions.h"
 	"${SPDir}/game/g_items.h"
+	"${SPDir}/game/g_modelscale.h"
 	"${SPDir}/game/g_playermods.h"
 	"${SPDir}/game/g_local.h"
 	"${SPDir}/game/g_nav.h"
@@ -197,6 +199,7 @@ set(SPGameCGameFiles
 	"${SPDir}/cgame/cg_drawtools.cpp"
 	"${SPDir}/cgame/cg_effects.cpp"
 	"${SPDir}/cgame/cg_ents.cpp"
+	"${SPDir}/cgame/cg_modelscale.cpp"
 	"${SPDir}/cgame/cg_event.cpp"
 	"${SPDir}/cgame/cg_headers.cpp"
 	"${SPDir}/cgame/cg_info.cpp"
@@ -268,6 +271,8 @@ set(SPGameCommonFiles
 	"${SPDir}/qcommon/ojk_saved_game_helper_fwd.h"
 	"${SPDir}/qcommon/ojk_scope_guard.h"
 	${SharedCommonFiles}
+	"${SharedDir}/qcommon/q_modelscale.h" # player mods
+	"${SharedDir}/qcommon/q_modelscale.c"
 	)
 source_group("common" FILES ${SPGameCommonFiles})
 set(SPGameFiles ${SPGameFiles} ${SPGameCommonFiles})

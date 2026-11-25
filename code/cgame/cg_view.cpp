@@ -400,7 +400,7 @@ static void CG_CalcIdealThirdPersonViewTarget(void)
 	{
 		// Add in a vertical offset from the viewpoint, which puts the actual target above the head, regardless of angle.
 		VectorCopy( cameraFocusLoc, cameraIdealTarget );
-		cameraIdealTarget[2] += cg_thirdPersonVertOffset.value;
+		cameraIdealTarget[2] += cg_thirdPersonVertOffset.value * CG_ModelScaleCameraFactor(); // player mods: scaled
 		//VectorMA(cameraFocusLoc, cg_thirdPersonVertOffset.value, cameraup, cameraIdealTarget);
 	}
 
@@ -460,7 +460,7 @@ static void CG_CalcIdealThirdPersonViewLocation(void)
 	}
 	else
 	{
-		VectorMA(cameraIdealTarget, -(cg_thirdPersonRange.value), camerafwd, cameraIdealLoc);
+		VectorMA(cameraIdealTarget, -(cg_thirdPersonRange.value * CG_ModelScaleCameraFactor()), camerafwd, cameraIdealLoc); // player mods: scaled
 	}
 
 	if ( cg.renderingThirdPerson && (cg.snap->ps.forcePowersActive&(1<<FP_SPEED)) && player->client->ps.forcePowerDuration[FP_SPEED] )
@@ -883,7 +883,7 @@ static void CG_OffsetThirdPersonView( void )
 	if ( cg_thirdPersonHorzOffset.value != 0.0f )
 	{
 		AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
-		VectorMA( cameraCurLoc, cg_thirdPersonHorzOffset.value, cg.refdef.viewaxis[1], cameraCurLoc );
+		VectorMA( cameraCurLoc, cg_thirdPersonHorzOffset.value * CG_ModelScaleCameraFactor(), cg.refdef.viewaxis[1], cameraCurLoc ); // player mods: scaled
 	}
 
 	// ...and of course we should copy the new view location to the proper spot too.

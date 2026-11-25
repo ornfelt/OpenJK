@@ -27,6 +27,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_local.h"
 #include "wp_saber.h"
 #include "g_functions.h"
+#include "g_modelscale.h" // player mods
 
 extern void G_NextTestAxes( void );
 extern void G_ChangePlayerModel( gentity_t *ent, const char *newModel );
@@ -938,6 +939,8 @@ static svcmd_t svcmds[] = {
 	{ "knockdown",					Svcmd_Knockdown_f,							CMD_CHEAT },
 
 	{ "playerModel",				Svcmd_PlayerModel_f,						CMD_NONE },
+	{ "modelscale",					Svcmd_ModelScale_f,							CMD_NONE }, // player mods
+	{ "modelscales",				Svcmd_ModelScales_f,						CMD_NONE }, // player mods
 	{ "playerTint",					Svcmd_PlayerTint_f,							CMD_NONE },
 
 	{ "nexttestaxes",				G_NextTestAxes,								CMD_NONE },

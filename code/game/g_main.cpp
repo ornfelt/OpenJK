@@ -38,6 +38,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "qcommon/ojk_saved_game_helper.h"
 #include "qcommon/game_version.h"
+#include "g_modelscale.h" // player mods
 
 extern void WP_SaberLoadParms( void );
 extern qboolean G_PlayerSpawned( void );
@@ -781,6 +782,8 @@ void InitGame(  const char *mapname, const char *spawntarget, int checkSum, cons
 	WP_SaberLoadParms();
 	//Set up NPC init data
 	NPC_InitGame();
+
+	G_ModelScaleInit(); // player mods: modelscale.cfg and its cvars
 
 	TIMER_Clear();
 	Rail_Reset();
@@ -1909,6 +1912,8 @@ void G_RunFrame( int levelTime ) {
 	level.framenum++;
 	level.previousTime = level.time;
 	level.time = levelTime;
+
+	G_ModelScaleRunFrame(); // player mods: a model scale cvar changed
 
 	//ResetTeamCounters();
 	NAV::DecayDangerSenses();

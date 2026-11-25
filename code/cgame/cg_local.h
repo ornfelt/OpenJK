@@ -617,6 +617,8 @@ extern	vmCvar_t		cg_roffval3;
 extern	vmCvar_t		cg_roffval4;
 #endif
 extern	vmCvar_t		cg_thirdPerson;
+extern	vmCvar_t		cg_thirdPersonModelScale; // player mods
+float CG_ModelScaleCameraFactor( void ); // player mods: cg_modelscale.cpp
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonMaxRange;
 extern	vmCvar_t		cg_thirdPersonAngle;

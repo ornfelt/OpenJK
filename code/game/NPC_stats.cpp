@@ -28,6 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "g_vehicles.h"
 #include "../cgame/cg_local.h"
 #include "g_playermods.h" // player mods
+#include "g_modelscale.h" // player mods
 #if !defined(RUFL_HSTRING_INC)
 	#include "../Rufl/hstring.h"
 #endif
@@ -4063,6 +4064,7 @@ Ghoul2 Insert Start
 			}
 
 			G_SetG2PlayerModel( NPC, playerModel, customSkin, surfOff, surfOn );
+			G_ModelScaleSetModel( NPC, playerModel, customSkin, G_ModelScalePercent( NPC->s.modelScale[0] ), qtrue ); // player mods: modelscale.cfg, bbox
 		}
 	}
 /*

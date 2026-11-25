@@ -292,6 +292,7 @@ vmCvar_t	cg_roffval3;
 vmCvar_t	cg_roffval4;
 #endif
 vmCvar_t	cg_thirdPerson;
+vmCvar_t	cg_thirdPersonModelScale; // player mods
 vmCvar_t	cg_thirdPersonRange;
 vmCvar_t	cg_thirdPersonMaxRange;
 vmCvar_t	cg_thirdPersonAngle;
@@ -412,6 +413,7 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_roffval4, "cg_roffval4", "0" },
 #endif
 	{ &cg_thirdPerson, "cg_thirdPerson", "1", CVAR_SAVEGAME },
+	{ &cg_thirdPersonModelScale, "cg_thirdPersonModelScale", "1", CVAR_ARCHIVE }, // player mods
 	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_ARCHIVE },
 	{ &cg_thirdPersonMaxRange, "cg_thirdPersonMaxRange", "150", 0 },
 	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", 0 },

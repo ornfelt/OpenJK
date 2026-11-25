@@ -26,6 +26,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "Q3_Interface.h"
 #include "g_local.h"
 #include "g_functions.h"
+#include "g_modelscale.h" // player mods
 #include "anims.h"
 #include "wp_saber.h"
 #include "g_vehicles.h"
@@ -2014,6 +2015,7 @@ void G_ChangePlayerModel( gentity_t *ent, const char *newModel )
 			G_SetG2PlayerModel( ent, name, NULL, NULL, NULL );
 		else
 			G_SetG2PlayerModel( ent, name, p, NULL, NULL );
+		G_ModelScaleSetModel( ent, name, strstr( p, "model_default" ) ? NULL : p, MODELSCALE_DEFAULT, qfalse ); // player mods: the size
 	}
 	else
 	{
@@ -2177,6 +2179,7 @@ qboolean ClientSpawn(gentity_t *ent, SavedGameJustLoaded_e eSavedGameJustLoaded 
 		{
 			G_LoadAnimFileSet( ent, ent->NPC_type );
 			G_SetSkin( ent );
+			G_ModelScaleSetModel( ent, NULL, NULL, MODELSCALE_DEFAULT, qfalse ); // player mods: the size
 		}
 
 		//setup sabers
@@ -2376,6 +2379,7 @@ qboolean ClientSpawn(gentity_t *ent, SavedGameJustLoaded_e eSavedGameJustLoaded 
 			{
 				G_LoadAnimFileSet( ent, ent->NPC_type );
 				G_SetSkin( ent );
+				G_ModelScaleSetModel( ent, NULL, NULL, MODELSCALE_DEFAULT, qfalse ); // player mods: the size
 			}
 			G_ReloadSaberData( ent );
 			//force power levels should already be set
