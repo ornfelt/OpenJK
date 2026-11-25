@@ -6,34 +6,36 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-25 (run 4, Linux): step 5 done - the player model size in SP.
+2026-11-25 (run 5, Linux): step 6 done - player models on their own copy of the humanoid skeleton
+in MP.
 
-- The `modelscale.cfg` parser moved to `shared/qcommon/q_modelscale.c` (MP game, MP cgame and the
-  SP game build it; not in `SharedCommonFiles`).
-- SP: `code/game/g_modelscale.cpp` - the same cvars plus `g_modelScaleSaved` (`CVAR_SAVEGAME`,
-  the command's value), console commands `modelscale [n|default]` (no cheats) and `modelscales`
-  (table, player, npcs). Hooks in `NPC_ParseParms`, `G_ChangePlayerModel`, `ClientSpawn`,
-  `InitGame`, `G_RunFrame` and the svcmds table; SP pmove needed no change. The SP camera follows
-  the player's size (`code/cgame/cg_modelscale.cpp`, `cg_thirdPersonModelScale`).
-- The npc bbox rule, in both games: width, stand and crouch height each rescale from the scale they
-  belong to (the `.npc` scale for a value the file set, 100 for a default one).
-- The user chose that an npc's own `.npc` scale wins over the cfg (both games, tested).
-- Tested: SP `playermodel` yodavm / T_yoda / greeveevm, `modelscale` refused for lack of room and
-  applied, crouching, save / load keeping the value, `g_modelScale` off / on, six npcs spawned in
-  SP and MP with and without `g_modelScale`, saves made by the pre-change module (built from
-  `a448e217`) loading in the new one, no-mods SP / MP / dedicated, no new warnings.
+- `t_yoda` (T_Yoda's SP model on `_humanoid_yoda.gla`) is now a working MP player model with its
+  own stance and staff moves; before it fell back to Kyle. Any model whose `.gla` has exactly
+  `_humanoid.gla`'s bones (count, names, parents, order) works the same way; the stock `_humanoid_*`
+  cinematic skeletons pass the check, no stock MP model uses one.
+- New `codemp/game/bg_playerskel.c` / `.h` and `g_playerskel.c` / `.h`; the "is it humanoid"
+  checks (34 sites in game, cgame and pmove) go through `BG_HumanoidAnimIndex()`. Latched
+  serverinfo cvar `g_customSkeletons` (default 1); no protocol / ABI / savegame change.
+- An off-by-one in the MP cgame's custom skin icon name (`CG_RegisterClientModelname`) fixed in its
+  own commit - gcc 14 reported it once the function changed.
+- Tested: dedicated server, bots on `t_yoda` (throwaway `.bot` in the test home) fighting stock
+  bots for a minute with saber kills both ways, on and off; gdb: the bot's anim set 2 =
+  `_humanoid_yoda/animation.cfg`, flagged humanoid, scale 45. MP client as `t_yoda` (stand, swing,
+  run, crouch, death ragdoll, respawn), zero `cg_showmiss` misses; a `t_yoda` bot drawn by the
+  client, `map_restart`, follow; the MP T_yoda npc on and off; `g_customSkeletons 0` gives the old
+  45 % Kyle; no-mods dedicated / MP / SP runs clean.
 
 ## Next
 
-1. Step 6, custom skeletons in MP (T_Yoda's `_humanoid_yoda.gla`): read how MP picks the
-   animation set per client (`bgAllAnims`, `localAnimIndex`, `BG_ParseAnimationFile`,
-   `G_PlayerHasCustomSkeleton`, `CG_RegisterClientModelname`) and whether a client model on its own
-   `.gla` can be animated on both server and cgame without a protocol change; ask the user before
-   anything that isn't protocol- and ABI-neutral. If it can't be done neutrally, record that and
-   go on to step 7.
-2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
-   screenshots, the MP custom-character species names, `inventory.py` knowing the override
-   recipes, the ui model preview showing the scale (optional).
+1. Step 7, menus: every mod's models in the MP player model menu (icons) and, where the mod ships
+   SP menu files, in the SP character creation menu with its name - mostly checked in run 2
+   (`mp_menu_check.sh`, `sp_menu_check.sh`); recheck after runs 3-5 and close the gaps (the MP
+   custom-character species names not seen on screen yet; `anakinvm` / `anavader` have no icons;
+   `t_yoda` has no icon, so it stays out of the menu - `model t_yoda` only).
+2. Then step 8 (sizes for every mod, screenshots, the user approves).
+3. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
+   screenshots, `inventory.py` knowing the override recipes, the ui model preview showing the scale
+   (optional).
 
 ## Waiting for the user
 
@@ -49,7 +51,7 @@ Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
 | 3 | MP model scale - game | done (run 3) |
 | 4 | MP model scale - cgame and ui | done (run 3); the ui model preview does not show the scale (optional, left) |
 | 5 | SP model scale | done (run 4) |
-| 6 | Custom skeletons in MP (T_Yoda) | todo |
+| 6 | Custom skeletons in MP (T_Yoda) | done (run 5) |
 | 7 | Menus | todo |
 | 8 | Sizes for every mod | todo |
 | 9 | Final pass, README section | todo |
@@ -226,7 +228,7 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | SWTORRevanV1-04 | ok (fix1) | ok (fix2): "swtorrevan" (dir name) | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
 | T_Anavader | ok (fix1) | ok (fix2): "Anakin Skywalker", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
 | T_luke_rotj_V2 | ok (fix1) | ok (fix2): "Luke ROTJ" | ok (fix1) | ok, 9 skins | ok (listed) | ok | ok | ok | ok |
-| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 45 % from `modelscale.cfg` since run 3; `t_yoda` (SP glm, own `.gla`): Kyle | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
+| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 45 % from `modelscale.cfg` since run 3; `t_yoda` (SP glm, own `.gla`): ok on its own skeleton since run 5 (`g_customSkeletons`), Kyle before | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
 | themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok | ok | n/a | ok since fix4 (`sound/chars/themando`) |
 | vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins; 120 % since run 3 | ok (listed) | ok | ok | todo | ok |
 | yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee`; `yodavm` 50 % since run 3 (`yodaflee` has no entry) | ok (listed) | ok | ok | ok | ok |
@@ -334,6 +336,28 @@ points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no e
 - Saber length is not scaled: the blade comes from the `.sab` file (YodaVM's and T_Yoda's sabers
   are already short), and a longer reach for big models would change the fight.
 - The third-person camera's range and offsets scale with the viewed player (cosmetic, any server).
+
+- Custom skeletons in MP (run 5): a player model may sit on a `.gla` other than `_humanoid` when
+  that skeleton is **humanoid-compatible** - the same bone count, names (case-insensitive) and
+  parents in the same order as `_humanoid.gla`, read from the file's header and skeleton (at most
+  32 KB, before `ofsFrames`). Its `animation.cfg` (next to the `.gla`) gets its own `bgAllAnims`
+  index (> 1) as before, so its frames are its own, and `BG_HumanoidAnimIndex()` maps it to 0 at the
+  "is it humanoid" checks. The server gives such a client its own ghoul2 instance
+  (`G_PlayerHasCustomSkeleton`, the hook the commented-out siege custom skeletons used), found from
+  the userinfo model's `model.glm` header (`animName`). Npcs on such a skeleton (the MP T_yoda npc)
+  are humanoid now too (pmove, broken limbs, ragdoll, head / lumbar angles).
+- `g_customSkeletons` (run 5): default 1, serverinfo, archived, **latched** (the anim set flags and
+  the server ghoul2 instances are set up per level). The cgame reads the serverinfo key: on a server
+  without it (retail, JA+, JA++) a fork client falls back to Kyle exactly as before. A retail / JA++
+  client on a fork server that picks `t_yoda` sees itself as Kyle and predicts with the stock
+  frames, while the server runs Yoda's (31 remapped animations: small prediction misses for that
+  client only); other clients see what their cgame supports. Without mods nothing changes: no stock
+  MP model uses a custom skeleton.
+- Left on the stock humanoid table (no change needed for a compatible skeleton, recorded for
+  later): the getup timing check in `BG_InKnockDownOnGround` (`BG_AnimLength( 0, ... )`), the IK base pose
+  frames (`BG_IK_MoveArm`), the one-frame anim re-set after a client model change in
+  `CG_NewClientInfo`, the first-person weapon frame map. The `t_yoda` saber is whatever the player
+  picks (`saber1`); its `.npc` `saberstyle 7` only applies to the npc.
 
 - The override pk3 is named `~playermods_overrides.pk3`: `FS_PathCmp` folds letters to upper
   case, so `_` (0x5F) beats `z`; only a leading `~` sorts after every mod pk3 (`zzzzzz_themando`,
@@ -459,4 +483,27 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   `G_ModelScaleNPC` (`codemp/game/g_modelscale.c`) and the npc branch of `G_ModelScaleSetModel`
   (`code/game/g_modelscale.cpp`): scale = the `.npc` scale when it is not 100, else the cfg's,
   else 100; comments, the default cfg's header.
-- (this commit) `[Tools] player mods: ledger, the npc precedence` - `PLAYER_MODS_STATUS.md`.
+- `5aa43bf9` `[Tools] player mods: ledger, the npc precedence` - `PLAYER_MODS_STATUS.md`.
+- `a5aeb1f9` `[MP] player mods: the icon name loop leaves room for the terminator` -
+  `codemp/cgame/cg_players.c` (`CG_RegisterClientModelname`: the `icon_<skin>` copy stops at
+  `sizeof(iconName) - 1`). The Rust port: just bound the copy.
+- `8e8cb164` `[MP] player mods: player models on a humanoid-compatible custom skeleton` - new
+  `codemp/game/bg_playerskel.c` / `.h` (game and cgame: `bgCustomSkeletons`; `.gla` header /
+  skeleton reader - ident `2LGA`, version 6, `ofsFrames` @80, `numBones` @84, bone offsets after
+  the 100-byte header relative to it, bone name[64] then flags then parent @68; little endian;
+  `BG_HumanoidCompatibleGLA` (`players/_humanoid/` always, else compare with
+  `models/players/_humanoid/_humanoid.gla`, 32-entry cache), `BG_CustomHumanoidGLA`,
+  `BG_ModelHasCustomHumanoidGLA` (`model.glm` header: ident `2LGM`, `animName` @72),
+  `BG_PlayerSkelAnimSetLoaded` (first `.gla` in the anim cfg's dir via `FS_GetFileList`),
+  `BG_HumanoidAnimIndex`), new `codemp/game/g_playerskel.c` / `.h` (per-client flag and model,
+  init from the cvar, userinfo hook returning "reload the server ghoul2", disconnect reset).
+  Edits: `bg_panimate.c` (`BG_ParseAnimationFile` flags new sets > 1), `g_utils.c`
+  (`G_PlayerHasCustomSkeleton` returns the flag), `g_client.c` (userinfo after the model block,
+  disconnect), `g_main.c` (init before `G_ModelScaleInit`), `g_xcvar.h`; the humanoid checks in
+  `NPC_AI_Rancor.c`, `g_weapon.c`, `g_client.c` (6), `NPC_AI_GalakMech.c`, `g_active.c` (2),
+  `g_combat.c` (3), `w_saber.c` (3), `bg_pmove.c`, `cg_ents.c` (2), `cg_predict.c` (player only,
+  not the vehicle), `cg_players.c` (13); `cg_players.c` `CG_RegisterClientModelname` accepts the
+  skeleton; `cg_servercmds.c` (serverinfo key, `CG_KillCEntityInstances` keeps a client's anim set);
+  game / cgame CMake lists. In the Rust port: one `is_humanoid_anim_set` helper used wherever the
+  C compares `localAnimIndex` with 0 / 1.
+- (this commit) `[Tools] player mods: ledger run 5` - `PLAYER_MODS_STATUS.md`.
