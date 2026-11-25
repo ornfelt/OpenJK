@@ -202,10 +202,14 @@ void G_ModelScaleNPC( gentity_t *npc, const char *model, const char *skin ) {
 		return;
 	}
 
+	// an npc's own .npc scale wins; the cfg sizes the npcs that have none (the user, 2026-11-25)
 	npcScale = client->ps.iModelScale ? client->ps.iModelScale : MODELSCALE_DEFAULT;
-	scale = Q_ModelScaleLookup( &modelScaleTable, model, skin );
-	if ( !scale ) {
-		scale = npcScale;
+	scale = npcScale;
+	if ( npcScale == MODELSCALE_DEFAULT ) {
+		scale = Q_ModelScaleLookup( &modelScaleTable, model, skin );
+		if ( !scale ) {
+			scale = MODELSCALE_DEFAULT;
+		}
 	}
 	if ( scale == MODELSCALE_DEFAULT && npcScale == MODELSCALE_DEFAULT ) {
 		return; // as before

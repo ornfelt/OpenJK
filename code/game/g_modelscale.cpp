@@ -22,8 +22,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 // The same modelscale.cfg and cvars as MP (shared/qcommon/q_modelscale.c parses the file). The
 // player's scale comes from, in order: its modelscale command (when g_modelScaleCmd allows it),
-// modelscale.cfg for its model, the .npc file's scale (playermodel <npc>), 100; an npc's from the
-// cfg, then its .npc file. SP pmove already sizes the bbox and view height from the entity's
+// modelscale.cfg for its model, the .npc file's scale (playermodel <npc>), 100; an npc keeps its
+// .npc file's scale, the cfg sizes the npcs that have none (the user's choice, 2026-11-25). SP pmove already sizes the bbox and view height from the entity's
 // mins / maxs and the client's stand / crouch heights, and the cgame draws s.modelScale with the
 // feet kept at DEFAULT_MINS_2, so setting those is all it takes. All of them are in the savegame
 // already; the command's value is kept in a CVAR_SAVEGAME cvar. No savegame format change.
@@ -276,13 +276,16 @@ void G_ModelScaleSetModel( gentity_t *ent, const char *model, const char *skin, 
 		model = ghoulModel;
 	}
 
-	if ( ent->s.number ) { // an npc: the cfg, then its .npc file
+	if ( ent->s.number ) { // an npc: its own .npc scale wins, the cfg sizes the npcs that have none
 		if ( !g_modelScale->integer ) {
 			return;
 		}
-		scale = Q_ModelScaleLookup( &modelScaleTable, model, skin );
-		if ( !scale ) {
-			scale = npcScale;
+		scale = npcScale;
+		if ( npcScale == MODELSCALE_DEFAULT ) {
+			scale = Q_ModelScaleLookup( &modelScaleTable, model, skin );
+			if ( !scale ) {
+				scale = MODELSCALE_DEFAULT;
+			}
 		}
 		if ( scale != MODELSCALE_DEFAULT || npcScale != MODELSCALE_DEFAULT ) {
 			G_ModelScaleBBoxBase( ent, npcScale, &base );
