@@ -1,0 +1,61 @@
+// In-universe standing heights in metres for the player mods' models, read by
+// `measure_heights.py --target heights.txt`, which turns them into modelscale.cfg factors:
+// target / kyle / the model's mesh height relative to Kyle's (all humanoid models are rigged to the
+// same skeleton, so at scale 1.0 every one of them stands as tall as Kyle).
+// Values: commonly quoted character heights (or the actor's, where the character has none);
+// approximate, for the user to adjust (PLAYER_MODS_STATUS.md, Sizes).
+
+kyle				1.80	// the reference: Kyle Katarn at scale 1.0
+
+// Anakin Skywalker / Darth Vader
+anakinvm			1.85
+hs_anakin			1.85
+hs_anakin2			1.85
+hs_anakin_e2		1.85
+jedi_anakin			1.85
+jedi_anakint		1.85
+t_anakin			1.85
+anavader			2.02
+jedi_vader			2.02
+t_vader				2.02
+vadervmm			2.02
+
+// Yoda and Grogu
+yodavm				0.66
+yodaflee			0.66
+t_yoda				0.66
+t_yoda_mp			0.66
+babyyoda			0.41
+
+// Jedi
+hs_kenobi_rots		1.82
+jedi_kenobi			1.82
+quigon				1.93
+jedi_luke			1.72
+t_luke_rotj			1.72
+luke_trainer		1.72
+luke_bobble			1.72
+jtempleg			1.85	// Jedi Temple Guard: no canon height, a little above Kyle
+swtorrevan			1.83
+
+// Sith
+hs_dooku			1.93
+sid					1.73
+dt_maul				1.75
+psdarthmalgus		2.07	// no canon height; its .npc scale 115
+kylo				1.89
+kylo_ren			1.89
+kylorenk			1.89
+grievous			2.16
+
+// others
+st_rey				1.70
+jedi_st_rey			1.70
+st_finn				1.78
+jedi_st_finn		1.78
+st_poe				1.73
+jedi_st_poe			1.73
+cloneii				1.83
+dt_stormtrooper_ep7	1.83
+dindjarin			1.85
+dindjarin_gp		1.85

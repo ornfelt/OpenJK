@@ -1,0 +1,118 @@
+# Shows every player mod model at scale 100 and at its size next to a Kyle npc, on one contact
+# sheet, so the sizes of modelscale.cfg (step 8 of PLAYER_MODS_STATUS.md) can be judged by eye.
+# The PowerShell twin of size_check.sh (same cfg, same shots; the sheet needs ImageMagick's magick).
+#
+# The sizes come from measure_heights.py -target heights.txt (the proposal) or, with -Cfg, from a
+# modelscale.cfg. It runs run_test.ps1 mp in a throwaway home: devmap mp/duel1, a Kyle npc in front
+# of the player, the camera from the side at a fixed distance (cg_thirdPersonModelScale 0), then
+# per model: model <m>; /modelscale 100; screenshot; /modelscale <size>; screenshot. No GUI input.
+#
+# Usage examples:
+#   all mods installed into a fresh throwaway home, the sizes heights.txt proposes:
+#     .\size_check.ps1
+#   in a given home, the mods already there:
+#     .\size_check.ps1 -HomeDir $env:TEMP\ojk_size -NoInstall
+#   only some models (substrings of the model dir, case-insensitive), home positional:
+#     .\size_check.ps1 $env:TEMP\ojk_size -NoInstall -Model yoda,grievous
+#   the sizes of a modelscale.cfg instead of the proposal:
+#     .\size_check.ps1 -HomeDir $env:TEMP\ojk_size -NoInstall -Cfg base\modelscale.cfg
+#   the contact sheet somewhere else:
+#     .\size_check.ps1 -Sheet $env:TEMP\sizes.jpg
+#   print the commands instead of running them:
+#     .\size_check.ps1 -DebugCmd
+param(
+	[Parameter(Position = 0)][string]$HomeDir,
+	[string]$Sheet,
+	[string]$Cfg,
+	[string[]]$Model = @(),
+	[string[]]$Only = @(),
+	[string[]]$Exclude = @(),
+	[switch]$NoInstall,
+	[switch]$DebugCmd
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Write-Header([string]$t) { Write-Host $t -ForegroundColor Cyan }
+function Write-Ok([string]$t)     { Write-Host $t -ForegroundColor Green }
+function Write-Warn([string]$t)   { Write-Host $t -ForegroundColor Yellow }
+function Write-Err([string]$t)    { Write-Host $t -ForegroundColor Red }
+function Write-Key([string]$k, [string]$v) { Write-Host "  ${k}:" -ForegroundColor Blue -NoNewline; Write-Host " $v" }
+
+$ScriptDir = $PSScriptRoot
+$TestGame = 'playermods_test'
+$Targets = Join-Path $ScriptDir 'heights.txt'
+# meshes another listed model already shows, and the SP-only custom character dirs (jedi_*)
+$SkipRe = '^(jedi_[^ ]*|hs_anakin2|t_yoda_mp|yodaflee) '
+$ModelWait = 330                        # frames: the server takes 3 userinfo changes per 6 s
+$ScaleWait = 60
+$ShotCrop = '1280x600+0+60'             # the 1280x720 window without most of the HUD
+$ShotGeometry = '384x180+2+2'
+$CameraRange = 200                      # cg_thirdPersonRange: the tallest model at 100 % stays in frame
+$RangeAll = '10 250'                    # g_modelScaleRange for the test: every size the cfg allows
+
+if (-not $HomeDir) { $HomeDir = Join-Path ([IO.Path]::GetTempPath()) ('ojk_size_' + [IO.Path]::GetRandomFileName()) }
+if (-not $Sheet) { $Sheet = Join-Path $HomeDir 'sizes.jpg' }
+$cfgPath = Join-Path $HomeDir 'size_check.cfg'
+$shots = Join-Path (Join-Path $HomeDir $TestGame) 'screenshots'
+$python = if (Get-Command python3 -ErrorAction SilentlyContinue) { 'python3' } else { 'python' }
+
+$measureArgs = @('-I', (Join-Path $ScriptDir 'measure_heights.py'), '--base', (Join-Path $HomeDir 'base'), '--target', $Targets, '--sizes')
+if ($Cfg) { $measureArgs += @('--cfg', $Cfg) }
+if ($Model.Count -gt 0) { $measureArgs += @('--model', ($Model -join ',')) }
+
+Write-Header 'player model size check'
+Write-Key 'home' $HomeDir
+Write-Key 'sizes' $(if ($Cfg) { $Cfg } else { "$Targets (proposal)" })
+if ($DebugCmd) {
+	Write-Host "& $(Join-Path $ScriptDir 'install_player_mods.ps1') -Dest $(Join-Path $HomeDir 'base')"
+	Write-Host "& $python $($measureArgs -join ' ')  # <model> <percent>, minus $SkipRe"
+	Write-Host "# cfg ${cfgPath}: g_modelScaleRange `"$RangeAll`", cg_thirdPersonModelScale 0, side camera, devmap mp/duel1, npc spawn kyle,"
+	Write-Host "#   per model: model <m>; wait $ModelWait; modelscale 100; wait $ScaleWait; screenshot size_<n>_100; modelscale <p>; wait $ScaleWait; screenshot size_<n>_<p>"
+	Write-Host "& $(Join-Path $ScriptDir 'run_test.ps1') mp -HomeDir $HomeDir -NoInstall -Cfg $cfgPath -Timeout 900"
+	Write-Host "magick montage -crop $ShotCrop -label '%t' $shots\size_*.jpg -tile 4x -geometry $ShotGeometry $Sheet"
+	exit 0
+}
+$magick = Get-Command magick -ErrorAction SilentlyContinue
+if (-not $magick) { Write-Err 'needs ImageMagick (magick)'; exit 1 }
+
+New-Item -ItemType Directory -Force -Path (Join-Path $HomeDir 'base') | Out-Null
+if (-not $NoInstall) {
+	$inst = @{ Dest = (Join-Path $HomeDir 'base') }
+	if ($Only.Count -gt 0) { $inst.Only = $Only }
+	if ($Exclude.Count -gt 0) { $inst.Exclude = $Exclude }
+	& (Join-Path $ScriptDir 'install_player_mods.ps1') @inst | Select-Object -Last 1
+}
+$sizes = @(& $python @measureArgs | Where-Object { $_ -and $_ -notmatch $SkipRe })
+if ($sizes.Count -eq 0) { Write-Err 'no models to check'; exit 1 }
+
+$lines = @('// generated by size_check.ps1', "set g_modelScaleRange `"$RangeAll`"", 'set cg_thirdPerson 1',
+	'set cg_thirdPersonAngle 90', "set cg_thirdPersonRange $CameraRange", 'set cg_thirdPersonModelScale 0',
+	'set con_notifytime 0', 'devmap mp/duel1', 'wait 600', 'team free', 'wait 120', 'togglemenu', 'wait 200',
+	'npc spawn kyle', 'wait 120')
+$i = 0
+foreach ($line in $sizes) {
+	$m, $p = $line -split ' ', 2
+	$n = '{0:D2}' -f $i
+	$lines += @("echo @@ size ${m}: $p", "model $m", "wait $ModelWait", 'modelscale 100', "wait $ScaleWait", "screenshot size_${n}_${m}_100")
+	if ($p -ne '100') { $lines += @("modelscale $p", "wait $ScaleWait", "screenshot size_${n}_${m}_$p") }
+	$i++
+}
+$lines += @('echo @@ end', 'quit')
+Set-Content -LiteralPath $cfgPath -Value $lines -Encoding ascii
+Write-Key 'models' $sizes.Count
+
+if (Test-Path -LiteralPath $shots) { Remove-Item -LiteralPath $shots -Recurse -Force }
+& (Join-Path $ScriptDir 'run_test.ps1') mp -HomeDir $HomeDir -NoInstall -Cfg $cfgPath -Timeout 900 | Select-String 'exited|status|timed|loaded'
+$files = @(Get-ChildItem -LiteralPath $shots -Filter 'size_*.jpg' -ErrorAction SilentlyContinue | Sort-Object Name)
+if ($files.Count -eq 0) { Write-Warn 'no screenshots'; exit 1 }
+$montage = @('montage', '-crop', $ShotCrop)
+foreach ($f in $files) {
+	$b = $f.BaseName -replace '^size_\d\d_', ''
+	$cut = $b.LastIndexOf('_')
+	$montage += @('-label', "$($b.Substring(0, $cut)) $($b.Substring($cut + 1))%", $f.FullName)
+}
+$montage += @('-tile', '4x', '-geometry', $ShotGeometry, '-pointsize', '12', $Sheet)
+& $magick.Source @montage
+Write-Ok "$($files.Count) screenshot(s)"
+Write-Key 'sheet' $Sheet
