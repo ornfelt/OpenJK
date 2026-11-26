@@ -6,33 +6,36 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-25 (run 5, Linux): step 6 done - player models on their own copy of the humanoid skeleton
-in MP.
+2026-11-26 (run 6, Linux): step 7 done - the menus.
 
-- `t_yoda` (T_Yoda's SP model on `_humanoid_yoda.gla`) is now a working MP player model with its
-  own stance and staff moves; before it fell back to Kyle. Any model whose `.gla` has exactly
-  `_humanoid.gla`'s bones (count, names, parents, order) works the same way; the stock `_humanoid_*`
-  cinematic skeletons pass the check, no stock MP model uses one.
-- New `codemp/game/bg_playerskel.c` / `.h` and `g_playerskel.c` / `.h`; the "is it humanoid"
-  checks (34 sites in game, cgame and pmove) go through `BG_HumanoidAnimIndex()`. Latched
-  serverinfo cvar `g_customSkeletons` (default 1); no protocol / ABI / savegame change.
-- An off-by-one in the MP cgame's custom skin icon name (`CG_RegisterClientModelname`) fixed in its
-  own commit - gcc 14 reported it once the function changed.
-- Tested: dedicated server, bots on `t_yoda` (throwaway `.bot` in the test home) fighting stock
-  bots for a minute with saber kills both ways, on and off; gdb: the bot's anim set 2 =
-  `_humanoid_yoda/animation.cfg`, flagged humanoid, scale 45. MP client as `t_yoda` (stand, swing,
-  run, crouch, death ragdoll, respawn), zero `cg_showmiss` misses; a `t_yoda` bot drawn by the
-  client, `map_restart`, follow; the MP T_yoda npc on and off; `g_customSkeletons 0` gives the old
-  45 % Kyle; no-mods dedicated / MP / SP runs clean.
+- MP player model grid rechecked (`mp_menu_check.sh`, all 17 pages this time): every mod skin that
+  ships an `icon_<skin>` is listed. Skins without an icon are not in the grid (stock MP UI rule)
+  and stay reachable with `model <dir>/<skin>`: `anakinvm`, `anavader`, `luke_bobble`, `t_yoda`,
+  and some skins of `hs_anakin`, `hs_anakin2`, `hs_anakin_e2`, `hs_dooku`, `hs_kenobi_rots`,
+  `swtorrevan`, `t_luke_rotj` (n/a: the mods ship no icon for them).
+- Found and fixed: with every mod installed the `.npc` file name list (2048 bytes, SP and MP)
+  overflowed - 147 names, 2049 bytes - so the stock `z-95.npc` was never loaded (MP `npc spawn
+  vehicle Z-95`: "Couldn't spawn NPC z-95"). Raised to 16384, and the MP ui model grid's dir list
+  (1914 of 2048 bytes in use) with it.
+- The user chose (2026-11-26) menu names through the override pk3: a partial `MENUS.str` names
+  `kylo` "Kylo Ren", `kylo_ren` "Kylo Ren (TFA)", `psdarthmalgus` "Darth Malgus", `swtorrevan`
+  "Revan", the Malgus SP hilt "Darth Malgus", and tags the two Anakins "Anakin (HapSlash)" /
+  "Anakin (Toshi)" (shortened from "Anakin Skywalker (...)", which ran past the SP species box).
+- New checks: `mp_menu_check.sh --species` (the MP custom character menu, `ui_openmenu
+  ingame_player2` plus clicks on its species button) and `sp_menu_check.sh --hilts` (the SP saber
+  menu's single hilts). The MP custom character species names are now seen on screen.
+- Tested: SP character menu (18 species), MP custom character menu (all 12 mod species; the run
+  stopped after 14 entries when the window lost focus, the rest are stock), SP saber hilts (9
+  stock + Malgus), MP `npc spawn vehicle Z-95`, SP finding `Z-95`, the names file with LF line
+  endings as git stores it.
 
 ## Next
 
-1. Step 7, menus: every mod's models in the MP player model menu (icons) and, where the mod ships
-   SP menu files, in the SP character creation menu with its name - mostly checked in run 2
-   (`mp_menu_check.sh`, `sp_menu_check.sh`); recheck after runs 3-5 and close the gaps (the MP
-   custom-character species names not seen on screen yet; `anakinvm` / `anavader` have no icons;
-   `t_yoda` has no icon, so it stays out of the menu - `model t_yoda` only).
-2. Then step 8 (sizes for every mod, screenshots, the user approves).
+1. Step 8, sizes for every mod: measure each model's standing height against Kyle at scale 100
+   (same map spot, pose and camera; not SP `t1_surprise`'s start spot), fill
+   `tools/player_mods/base/modelscale.cfg`, show the user the table with screenshots side by side
+   and adjust; the open question from the Sizes table (babyyoda 0.37 `.npc` vs the cfg's 0.5).
+2. Then step 9 (final pass, README section).
 3. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
    screenshots, `inventory.py` knowing the override recipes, the ui model preview showing the scale
    (optional).
@@ -52,7 +55,7 @@ Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
 | 4 | MP model scale - cgame and ui | done (run 3); the ui model preview does not show the scale (optional, left) |
 | 5 | SP model scale | done (run 4) |
 | 6 | Custom skeletons in MP (T_Yoda) | done (run 5) |
-| 7 | Menus | todo |
+| 7 | Menus | done (run 6) |
 | 8 | Sizes for every mod | todo |
 | 9 | Final pass, README section | todo |
 
@@ -108,6 +111,9 @@ prints the equivalent shell commands.
   to the game window, verified by title, by its process holding the throwaway home and by being the
   active window before each input; `run_test.sh --mouse` reads the mouse without grabbing it. Linux
   only (xdotool, ImageMagick); no `.ps1` twins - on Windows the menus are checked by hand.
+  `sp_menu_check.sh --hilts`: one more Next click, the SP saber menu's single hilt names.
+  `mp_menu_check.sh --species`: the MP custom character menu (`ui_openmenu ingame_player2`), one
+  click on its species button per species (the item does not follow `ui_char_model` while open).
 
 Testing notes (learned the hard way):
 
@@ -197,7 +203,9 @@ Checked on Linux, 2026-11-25, with the unchanged build (fork `0eb6dfb7`) and all
 Fixes referred to: fix1 `.npc` brace repair (run 1), fix2 string file merge + species name fallback,
 fix3 stray `}` in MP shader files, fix4 `sounds.cfg` sound dir (run 2); "override" = the override pk3.
 "ok (listed)" in MP menu: the model's icons are in the MP player model grid (`mp_menu_check.sh`
-contact sheet, 2026-11-25; the run lost focus after 14 pages, all mod pages were covered).
+contact sheet, 2026-11-25, rechecked 2026-11-26 with all 17 pages). SP menu names rechecked
+2026-11-26 (`sp_menu_check.sh`, MP custom character menu `mp_menu_check.sh --species`: the same
+names); "names" = the override pk3's `MENUS.str` (run 6).
 
 Columns: SP playermodel (`playermodel <npc>`), SP menu (character creation), SP npc
 (`npc spawn`), MP model (`model <m>/<skin>`, every skin, screenshots), MP menu, MP bot (`addbot`,
@@ -216,17 +224,17 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | todo | ok |
 | DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | stock | ok |
 | grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins; 135 % from `modelscale.cfg` since run 3 | ok (listed) | ok | ok (fix1) | todo | ok |
-| hs_anakin | ok (fix1) | ok (fix2): "Anakin Skywalker" | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons: not in the menu) | ok (listed) | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
+| hs_anakin | ok (fix1) | ok (fix2, names): "Anakin (HapSlash)" | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons: not in the menu) | ok (listed) | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
 | hs_dookuja | ok (fix1) | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (`.sab` typos `saberOn`, `munberBlades` ignored) | ok |
 | hs_kenobi_rots | ok (fix1) | ok (fix2): "Obi-Wan Kenobi" | ok (fix1) | ok, 6 skins (`jedi_kenobi` untextured if forced) | ok (listed) | ok | ok (fix1) | ok (same `.sab` typos) | ok |
-| KyloRenTFAUpdated | ok (fix1) | ok (fix2): "kylo_ren" (dir name, the mod has no MENUS entry) | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren TFA" on `kylo_ren` | ok | broken: `sith_unstable` not installed (needs jkhub 2218) | partial set |
-| kyloV.1.02 | ok (fix1) | ok (fix2): "kylo" (dir name) | ok (fix1) | ok, 4 skins | ok (listed) | ok via override: "Kylo Ren" on `Kylo` | ok (fix1) | broken: `ren` not installed (DarthMartyr's saber) | partial set |
-| PSKDarthMalgus | ok (fix1) | ok (fix2): "psdarthmalgus" (dir name) | ok (fix1) | ok | ok (listed) | ok | ok (fix1) | broken: npc saber `malgus`, the `.sab` defines `darth_malgus`; hilt menu entry has no string | ok |
+| KyloRenTFAUpdated | ok (fix1) | ok (names): "Kylo Ren (TFA)" (the mod has no MENUS entry) | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren TFA" on `kylo_ren` | ok | broken: `sith_unstable` not installed (needs jkhub 2218) | partial set |
+| kyloV.1.02 | ok (fix1) | ok (names): "Kylo Ren" | ok (fix1) | ok, 4 skins | ok (listed) | ok via override: "Kylo Ren" on `Kylo` | ok (fix1) | broken: `ren` not installed (DarthMartyr's saber) | partial set |
+| PSKDarthMalgus | ok (fix1) | ok (names): "Darth Malgus" | ok (fix1) | ok | ok (listed) | ok | ok (fix1) | broken: npc saber `malgus`, the `.sab` defines `darth_malgus`; hilt menu entry has no string | ok |
 | Seven-Qui-Gon_Jinn | ok (fix1) | n/a | ok (fix1) - its `quigon.npc` was the cause | ok, 7 skins | ok (listed) | n/a | ok | ok | ok |
 | ST_Finn_Poe_V2.1 | ok (fix1) | ok (fix2): "Finn", "Poe Dameron" | ok (fix1) | ok, 10 skins (`jedi_st_*` untextured if forced) | ok (listed) | ok | ok | stock | ok |
 | ST_REY_V2.3 | ok (fix1) | ok (fix2): "Rey" | ok (fix1) | ok, 6 skins | ok (listed) | ok | ok | stock | ok |
-| SWTORRevanV1-04 | ok (fix1) | ok (fix2): "swtorrevan" (dir name) | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
-| T_Anavader | ok (fix1) | ok (fix2): "Anakin Skywalker", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
+| SWTORRevanV1-04 | ok (fix1) | ok (names): "Revan" | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
+| T_Anavader | ok (fix1) | ok (fix2, names): "Anakin (Toshi)", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
 | T_luke_rotj_V2 | ok (fix1) | ok (fix2): "Luke ROTJ" | ok (fix1) | ok, 9 skins | ok (listed) | ok | ok | ok | ok |
 | T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 45 % from `modelscale.cfg` since run 3; `t_yoda` (SP glm, own `.gla`): ok on its own skeleton since run 5 (`g_customSkeletons`), Kyle before | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
 | themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok | ok | n/a | ok since fix4 (`sound/chars/themando`) |
@@ -244,8 +252,8 @@ Other findings:
   the SP configstring layout (savegames) - only after asking.
 - MP shows every skin of every model; since run 3 the models in `modelscale.cfg` are drawn,
   boxed and predicted at their size.
-- MP: the custom character species list (the MP UI's "Custom" model) gets the same names merge
-  and fallback, not seen on screen yet.
+- MP: the custom character species list (the MP UI's "Custom" model) shows the same names as SP
+  (seen on screen in run 6).
 - SP `t1_surprise`'s start spot hides a small player behind a rock ledge in the front view (YodaVM
   at 50 % is out of sight with or without model scaling): take the step 8 shots elsewhere.
 - SP `playermodel`: several shots taken ~1.7 s after the switch show the new model in a T-pose
@@ -383,9 +391,15 @@ points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no e
   every npc stored after it in the concatenated buffer. Balanced files are untouched; no format,
   protocol or ABI change.
 - SP `G_ChangePlayerModel` no longer recurses when its `stormtrooper` fallback is missing too.
-- The suspected `.npc` file-name list overflow (`npcExtensionListBuf[2048]`) is not one: the
-  146 names take 2036 bytes. It is close, so a few more npc mods will overflow it - raise it when
-  that happens (or before, with the next loader fix).
+- `.npc` file name list (run 6): run 1 counted 146 names in 2036 bytes; the override pk3's
+  renamed npc made it 147 / 2049 and `FS_GetFileList` dropped the last one, the stock `z-95.npc`.
+  `npcExtensionListBuf` is `PLAYERMODS_NPC_LIST_SIZE` (16384) in SP and MP now, and the MP ui
+  model grid's `models/players` dir list `Q3MODEL_DIR_LIST_SIZE` (16384; 158 dirs took 1914 of
+  2048). Other lists that grow with mods are far from full (bots 295 / 1024, sabers 421 / 2048,
+  model dirs in the species lists already 16384).
+- Menu names (the user, 2026-11-26): through the override pk3 (`override/menu_names.recipe`, a
+  partial `MENUS.str`, no `needs`), see Last run run 6. Skins without an `icon_<skin>` stay out of
+  the MP grid (the mods ship none; no generated icons).
 
 - Default variants: SWTOR Revan full version, Luke Trainer `(Trainer)`; T_Yoda's loose copy
   ignored, its `Yoda.cfg` installed (`player_mods.conf`).
@@ -506,4 +520,15 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   skeleton; `cg_servercmds.c` (serverinfo key, `CG_KillCEntityInstances` keeps a client's anim set);
   game / cgame CMake lists. In the Rust port: one `is_humanoid_anim_set` helper used wherever the
   C compares `localAnimIndex` with 0 / 1.
-- (this commit) `[Tools] player mods: ledger run 5` - `PLAYER_MODS_STATUS.md`.
+- `a6be163f` `[Tools] player mods: ledger run 5` - `PLAYER_MODS_STATUS.md`.
+- `fc5b1b29` `[Shared] player mods: room for more .npc files and player model dirs` -
+  `PLAYERMODS_NPC_LIST_SIZE` 16384 in `code/game/g_playermods.h` and `codemp/game/g_playermods.h`
+  for `npcExtensionListBuf` in both `NPC_stats` files; `Q3MODEL_DIR_LIST_SIZE` 16384 in
+  `codemp/ui/ui_local.h` for `UI_BuildQ3Model_List`'s `dirlist` (`ui_main.c`, the
+  `FS_GetFileList` call takes `sizeof`). The Rust port: whatever list type it uses must not cap
+  these at 2048 bytes.
+- `dbe71c1f` `[Tools] player mods: mp_menu_check.sh --species ...` - tools only.
+- `9d542600` `[Tools] player mods: menu names the mods do not ship, in the override pk3` - tools
+  and override data only; nothing to port (the pk3 is data).
+- `9fc0eb0e` `[Tools] player mods: sp_menu_check.sh --hilts ...` - tools only.
+- (this commit) `[Tools] player mods: ledger run 6` - `PLAYER_MODS_STATUS.md`.
