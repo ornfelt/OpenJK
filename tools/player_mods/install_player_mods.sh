@@ -257,7 +257,7 @@ if compgen -G "$game/base/assets*.pk3" > /dev/null; then
 	print_header "pk3s that replace stock files (exclude with --exclude <mod>/<pk3>)"
 	pk3s=()
 	for i in "${!sources[@]}"; do [[ "${sources[$i],,}" == *.pk3 ]] && pk3s+=("${sources[$i]}"); done
-	python3 -I - "$game/base" "${pk3s[@]}" <<'PY' || print_warn "could not list the stock overrides"
+	OV_PK3="${ov_pk3:-}" OV_TAG="$OVERRIDE_SOURCE" python3 -I - "$game/base" "${pk3s[@]}" <<'PY' || print_warn "could not list the stock overrides"
 import glob, os, sys, zipfile
 stock = set()
 for p in sorted(glob.glob(os.path.join(sys.argv[1], "assets*.pk3"))):
@@ -270,7 +270,9 @@ for p in sys.argv[2:]:
 		hits = sorted({n.replace("\\", "/").lower() for n in z.namelist()} & stock)
 	if hits:
 		more = " ..." if len(hits) > 4 else ""
-		print(f"  {os.path.basename(os.path.dirname(p))}/{os.path.basename(p)}: {len(hits)}: {', '.join(hits[:4])}{more}")
+		# the override pk3 is built in a temp dir: name it by its manifest tag instead
+		where = os.environ["OV_TAG"] if p == os.environ.get("OV_PK3") else os.path.basename(os.path.dirname(p))
+		print(f"  {where}/{os.path.basename(p)}: {len(hits)}: {', '.join(hits[:4])}{more}")
 PY
 else
 	print_warn "no assets*.pk3 in $game/base: stock overrides not listed (--game <dir>)"

@@ -1,0 +1,36 @@
+// player mods: menu names the installed mods do not ship (tools/player_mods/override/menu_names.recipe)
+// merged key by key with every other copy of MENUS.str
+
+VERSION             "1"
+CONFIG              "W:\bin\stringed.cfg"
+FILENOTES           ""
+
+REFERENCE           JEDI_ANAKIN
+NOTES               "For character menu: HS_anakin (HapSlash)"
+LANG_ENGLISH        "Anakin (HapSlash)"
+
+REFERENCE           JEDI_ANAKINT
+NOTES               "For character menu: T_AnaVader (Toshi)"
+LANG_ENGLISH        "Anakin (Toshi)"
+
+REFERENCE           KYLO
+NOTES               "For character menu: kyloV.1.02"
+LANG_ENGLISH        "Kylo Ren"
+
+REFERENCE           KYLO_REN
+NOTES               "For character menu: KyloRenTFAUpdated"
+LANG_ENGLISH        "Kylo Ren (TFA)"
+
+REFERENCE           PSDARTHMALGUS
+NOTES               "For character menu: PSKDarthMalgus"
+LANG_ENGLISH        "Darth Malgus"
+
+REFERENCE           SWTORREVAN
+NOTES               "For character menu: SWTORRevanV1-04"
+LANG_ENGLISH        "Revan"
+
+REFERENCE           SINGLE_HILT10
+NOTES               "Saber menu: PskDarthMalgus_Hilt's darth_malgus"
+LANG_ENGLISH        "Darth Malgus"
+
+ENDMARKER

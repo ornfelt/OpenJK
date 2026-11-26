@@ -1,0 +1,11 @@
+# Menu names the mods do not ship (user decision 2026-11-26). The SP character menu and the MP
+# custom character menu show a species as @MENUS_<DIR>; kylo (kyloV.1.02), kylo_ren
+# (KyloRenTFAUpdated), psdarthmalgus (PSKDarthMalgus) and swtorrevan (SWTORRevanV1-04) have no
+# such string and showed their dir name, PskDarthMalgus_Hilt's ui/saber.menu names
+# @MENUS_SINGLE_HILT10 without defining it, and HS_anakin's jedi_anakin and T_AnaVader's
+# jedi_anakint are both "Anakin Skywalker" - named after their authors here ("Anakin (Toshi)":
+# the full name with the tag runs past the SP species box).
+# The engine merges every copy of a string file key by key (top pk3 wins), so this partial
+# MENUS.str only adds or replaces these keys. No needs: keys of species that are not installed
+# are simply unused.
+file    strings/English/MENUS.str menu_names.str

@@ -152,7 +152,7 @@ def build(recipes, players, mods, out_dir, quiet=False):
 	for r in recipes:
 		if not r.applies(mods):
 			if not quiet:
-				print_key(f"skipped {r.name}", f"needs {', '.join(r.needs)}")
+				print_key(f"skipped {r.name}", f"needs {', '.join(r.needs) or 'nothing'}")
 			continue
 		renames, out = [], {}
 		opened = {}
@@ -265,7 +265,7 @@ def main():
 	if args.list:
 		for r in recipes:
 			state = "applies" if r.applies(mods) else "skipped"
-			print_header(f"{r.name} ({state}): needs {', '.join(r.needs)}")
+			print_header(f"{r.name} ({state}): needs {', '.join(r.needs) or 'nothing'}")
 			for kind, source, a in r.steps:
 				print(f"  {kind} {' '.join(a)}" + (f"   (from {source})" if source else ""))
 		return 0
