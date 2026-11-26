@@ -31,7 +31,7 @@ extern "C" {
 #define MODELSCALE_DEFAULT			100
 #define MODELSCALE_HARD_MIN			10		// below this the bbox is thinner than a step trace
 #define MODELSCALE_HARD_MAX			250		// MP: the stand view height still fits ps.viewheight's 8 bits
-#define MODELSCALE_RANGE_DEFAULT	"30 200"	// "<min> <max>" for /modelscale: Grogu to past Grievous
+#define MODELSCALE_RANGE_DEFAULT	"20 200"	// "<min> <max>" for /modelscale: Grogu (22) to past Grievous
 #define MODELSCALE_PERCENT			100.0f	// modelscale.cfg holds factors (0.5), the games percents
 
 #define MODELSCALE_CFG_FILE			"modelscale.cfg"
