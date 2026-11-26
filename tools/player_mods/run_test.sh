@@ -25,6 +25,8 @@
 #     ./run_test.sh sp --mouse --exec "wait 3000; quit"
 #   remove the home afterwards:
 #     ./run_test.sh ded --clean --exec "..."
+#   extra cvars set on the command line, before the cfg (repeatable):
+#     ./run_test.sh ded --set net_port 29170 --set rconpassword test --exec "map mp/ffa1; wait 4000; quit"
 #   print the equivalent shell commands instead of running them:
 #     ./run_test.sh mp --debug --exec "devmap mp/ffa1; quit"
 
@@ -67,7 +69,7 @@ usage() { sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 mode="${1:-}"
 case "$mode" in sp|mp|ded) shift ;; -h|--help) usage; exit 0 ;; *) print_err "first argument: sp, mp or ded"; usage; exit 1 ;; esac
 home="" cfg="" exec_cmds="" baseline="" mouse=0 game="" install=1 mods=1 clean=0 debug=0 timeout_s=$DEFAULT_TIMEOUT grep_re="$DEFAULT_GREP" case_sensitive=0
-install_args=()
+install_args=() set_args=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--home)              home="$2"; shift 2 ;;
@@ -83,6 +85,7 @@ while [[ $# -gt 0 ]]; do
 		-c|--case-sensitive) case_sensitive=1; shift ;;
 		--clean)             clean=1; shift ;;
 		--mouse)             mouse=1; shift ;;
+		--set)               set_args+=(+set "$2" "$3"); shift 3 ;;
 		-d|--debug)          debug=1; shift ;;
 		-h|--help)           usage; exit 0 ;;
 		*)                   if [[ -z "$cfg" && -f "$1" ]]; then cfg="$1"; shift; else print_err "unknown argument: $1"; exit 1; fi ;;
@@ -143,7 +146,7 @@ case "$mode" in
 	     # --mouse: menu input from a driver (sp_menu_check.sh) - the mouse is read but never grabbed
 	     [[ $mouse -eq 1 ]] && args+=(+set in_mouse 1 +set in_nograb 1) ;;
 esac
-args+=(+exec "$CFG_NAME")
+args+=("${set_args[@]}" +exec "$CFG_NAME")
 print_key "run" "$exe (timeout ${timeout_s}s)"
 status=0
 if [[ $debug -eq 1 ]]; then
@@ -179,7 +182,8 @@ for m in "${modules[@]}" "${renderers[@]}"; do
 	fi
 done
 strip_time() { sed -E 's/^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:]{8} )+//'; }  # some lines carry it twice
-hits="$(strip_time < "$log" | grep -v -E -- "$PROBE_RE" | grep "${grep_flags[@]}" -- "$grep_re" || true)"
+# ^GL_: the renderer's extension list, which holds GL_KHR_no_error
+hits="$(strip_time < "$log" | grep -v -E -- "$PROBE_RE" | grep -v '^GL_' | grep "${grep_flags[@]}" -- "$grep_re" || true)"
 if [[ -n "$baseline" && -f "$baseline" && -n "$hits" ]]; then
 	hits="$(grep -vxF -f <(strip_time < "$baseline") <<< "$(sed -E 's/^[0-9]+://' <<< "$hits")" || true)"
 fi

@@ -599,9 +599,10 @@ TEST_MP_CLIENT_MAP = "mp/duel1"   # open floor in front of the spawn: the model 
 TEST_CAMERA = ["set cg_thirdPerson 1", "set cg_thirdPersonAngle 180", "set cg_thirdPersonRange 110", "set con_notifytime 0"]
 TEST_SP_RELOAD = 20     # SP checks per map load
 TEST_NPC_CAMERA = ["set cg_thirdPersonAngle 0", "set cg_thirdPersonRange 160"]
+TEST_MP_NPC_ANGLE = "set cg_thirdPersonAngle 90"  # MP npcs: from the side, the player does not hide them
 TEST_SP_SKIP = "exitview"  # SP: skips the map's opening cinematic (Svcmd_ExitView_f)
 TEST_MP_JOIN = ["team free", "togglemenu"]  # leave spectator; togglemenu sends Escape (closes the join menu)
-TEST_BATCH = 6          # bots / npcs alive at once
+TEST_BATCH = 6          # bots alive at once
 TEST_MODEL_WAIT = 330   # frames per model change (60 fps): each sends more than one userinfo and the
                         # server takes at most 3 per 6 s (codemp/server/sv_client.cpp INFO_CHANGE_MAX_COUNT)
 TEST_MARK = "echo @@"   # log marker before each check: "@@ <kind> <mod>: <what>"
@@ -648,12 +649,11 @@ def test_cfg(kind, mods, shots, wait_scale):
 				# SP: a fresh map every TEST_SP_RELOAD checks keeps the 64 skin configstrings of a
 				# level from overflowing (G_FindConfigstringIndex)
 				out += [f"devmap {TEST_MP_CLIENT_MAP if mp else TEST_SP_MAP}", w(600)]
-				out += [TEST_MP_JOIN[0], w(120), TEST_MP_JOIN[1], w(300)] if mp else [TEST_SP_SKIP, w(400), "helpusobi 1", "notarget"]
-			out += [TEST_NPC_CAMERA[0], f"{TEST_MARK} npc {mod}: {name} [{shot_name(kind, i)}]", f"npc spawn {name}", w(100)]
+				out += [TEST_MP_JOIN[0], w(120), TEST_MP_JOIN[1], w(300), "notarget"] if mp else [TEST_SP_SKIP, w(400), "helpusobi 1", "notarget"]
+			out += [TEST_MP_NPC_ANGLE if mp else TEST_NPC_CAMERA[0], f"{TEST_MARK} npc {mod}: {name} [{shot_name(kind, i)}]", f"npc spawn {name}", w(100)]
 			if shots:
 				out += [f"screenshot {shot_name(kind, i)}", w(20)]
-			if not mp or i % TEST_BATCH == TEST_BATCH - 1:
-				out += ["npc kill all", w(60)]
+			out += ["npc kill all", w(60)]  # one at a time: piled-up npcs fight and hide each other
 			if not mp:
 				out += [TEST_CAMERA[1], f"{TEST_MARK} playermodel {mod}: {name} [{shot_name('pm', i)}]", f"playermodel {name}", w(100)]
 				if shots:

@@ -19,6 +19,8 @@
 #     .\run_test.ps1 ded -Baseline $env:TEMP\h0\playermods_test\qconsole.log -Cfg bots.cfg
 #   only some mods, own error filter, case-sensitive:
 #     .\run_test.ps1 ded -Only T_Yoda,grievousvm -Grep "G2|Couldn't" -CaseSensitive -Cfg bots.cfg
+#   extra cvars set on the command line, before the cfg:
+#     .\run_test.ps1 ded -Set @{ net_port = 29170; rconpassword = 'test' } -Exec "map mp/ffa1; wait 4000; quit"
 #   remove the home afterwards / print the equivalent commands only:
 #     .\run_test.ps1 ded -Clean -Cfg bots.cfg
 #     .\run_test.ps1 mp -DebugCmd -Exec "devmap mp/duel1; quit"
@@ -34,6 +36,7 @@ param(
 	[string[]]$Exclude = @(),
 	[string]$Grep,
 	[int]$Timeout = 300,
+	[hashtable]$Set = @{},
 	[switch]$NoInstall,
 	[switch]$NoMods,
 	[switch]$CaseSensitive,
@@ -140,6 +143,7 @@ if (-not $DebugCmd -and (Test-Path -LiteralPath $log)) { Remove-Item -LiteralPat
 $gameArgs = @('+set', 'fs_homepath', $HomeDir, '+set', 'fs_basepath', $Game, '+set', 'fs_cdpath', '""', '+set', 'fs_game', $TestGame,
 	'+set', 'developer', '1', '+set', 'logfile', '2', '+set', 'com_hunkmegs', '512', '+set', 'bot_enable', '1') + $NetCvars
 if ($Mode -eq 'ded') { $gameArgs += @('+set', 'dedicated', '1') } else { $gameArgs += $WindowCvars }
+foreach ($k in $Set.Keys) { $gameArgs += @('+set', [string]$k, [string]$Set[$k]) }
 $gameArgs += @('+exec', $CfgName)
 $exePath = Join-Path $binDir $exe
 Write-Key 'run' "$exe (timeout ${Timeout}s)"
@@ -161,7 +165,7 @@ foreach ($m in $modules) {
 }
 if (-not (Test-Path -LiteralPath $log)) { $log = Join-Path $HomeDir 'stdout.log' }
 $strip = { param($l) $l -replace '^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} )+', '' }
-$lines = Get-Content -LiteralPath $log | ForEach-Object { & $strip $_ } | Where-Object { $_ -notmatch $ProbeRe }
+$lines = Get-Content -LiteralPath $log | ForEach-Object { & $strip $_ } | Where-Object { $_ -notmatch $ProbeRe -and $_ -notmatch '^GL_' }  # ^GL_: the extension list (GL_KHR_no_error)
 $hits = if ($CaseSensitive) { $lines | Where-Object { $_ -cmatch $Grep } } else { $lines | Where-Object { $_ -match $Grep } }
 if ($Baseline -and (Test-Path -LiteralPath $Baseline)) {
 	$base = New-Object 'System.Collections.Generic.HashSet[string]'
