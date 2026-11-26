@@ -48,7 +48,10 @@ on request: the ui model preview showing the scale, Revan's ghost skins not look
 
 ## Waiting for the user
 
-Nothing.
+- Grogu sounds (2026-11-26): BabyYoda's 32 sounds are byte-identical copies of YodaVM's Yoda
+  voice. The user will provide a folder of Grogu clips; then the override recipe gets a
+  `sound/chars/babyyoda/` set (a new `build_overrides.py` keyword reading that folder, audio not
+  committed), the renamed model's `sounds.cfg` and the `babyyoda` npc's `snd*` keys point at it.
 
 ## Steps
 
