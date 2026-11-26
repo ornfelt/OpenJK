@@ -110,7 +110,8 @@ Commands:
 `modelscale.cfg` (in `base/` or a pk3) is JA++'s format, and JA++'s own file loads unchanged:
 whitespace-separated `model scale` pairs, the scale a factor (`0.5` is half size), `model/skin`
 for one skin only, `//` and `/* */` comments. The default one (`tools/player_mods/base/modelscale.cfg`)
-has JA++'s entries plus an in-universe size for every tested mod model.
+has JA++'s entries plus an in-universe size for every tested mod model. How to change sizes (the
+file, the commands, npcs; a smaller Yoda / Grogu as the example): [docs/player-mod-sizes.md](docs/player-mod-sizes.md).
 
 Precedence for players and bots: `/modelscale`, then `modelscale.cfg`, then the `.npc` file's
 `scale` (SP `playermodel <npc>`), then 100. Npcs keep their own `.npc` scale where they have one,
