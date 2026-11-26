@@ -44,15 +44,11 @@ handle new mods in `players/` or what the user asks for.
 Nothing - the steps are done. A later run: re-run `inventory.py` for new mods in `players/` (then
 install, matrix rows, a size in `modelscale.cfg`), or what the user asks. Optional leftovers, only
 on request: the ui model preview showing the scale, Revan's ghost skins not looking translucent,
-`inventory.py` reading the override recipes, an override for T_AnaVader's missing hilts (see
-Waiting for the user), the untested `.ps1` scripts on Windows.
+`inventory.py` reading the override recipes, the untested `.ps1` scripts on Windows.
 
 ## Waiting for the user
 
-Nothing required. One optional choice (2026-11-26): T_AnaVader's `t_anakin` / `t_vader` sabers
-name hilts no installed mod ships, so its npcs and `saber t_anakin` show no hilt. Recommended:
-leave it (the mod is used as shipped; install the hilt mod if found). Alternative: an override
-recipe pointing the two `.sab` files at its own or a stock hilt.
+Nothing.
 
 ## Steps
 
@@ -449,6 +445,9 @@ kyloren 120, Darth_Malgus 115).
   (`interop_check.sh`), as the Decisions above predict: scaled players are drawn by any cgame, only
   the fork's predicts the scaled box; a stock cgame refuses `t_yoda`. A retail `jamp.exe` (Windows)
   was not available.
+
+- T_AnaVader's missing hilts (the user, 2026-11-26): left as is - the mod is used as shipped, its
+  `t_anakin` / `t_vader` sabers stay without a hilt unless the hilt mod they need turns up.
 
 - Default variants: SWTOR Revan full version, Luke Trainer `(Trainer)`; T_Yoda's loose copy
   ignored, its `Yoda.cfg` installed (`player_mods.conf`).
