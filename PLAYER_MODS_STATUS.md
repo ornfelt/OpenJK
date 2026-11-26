@@ -6,7 +6,7 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-26 (run 6, Linux): step 7 done - the menus.
+2026-11-26 (run 6, Linux): steps 7 (menus) and 8 (sizes) done.
 
 - MP player model grid rechecked (`mp_menu_check.sh`, all 17 pages this time): every mod skin that
   ships an `icon_<skin>` is listed. Skins without an icon are not in the grid (stock MP UI rule)
@@ -28,17 +28,25 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
   stopped after 14 entries when the window lost focus, the rest are stock), SP saber hilts (9
   stock + Malgus), MP `npc spawn vehicle Z-95`, SP finding `Z-95`, the names file with LF line
   endings as git stores it.
+- Step 8: `measure_heights.py` reads every model's LOD 0 base-pose height: every humanoid mod model
+  is Kyle's height within 4 % (one shared skeleton), the Yoda meshes ~10 % above (ears) - so a
+  model's size is a choice, in-universe height / Kyle's 1.80 m (`heights.txt`). The user chose
+  in-universe sizes (2026-11-26); the default `modelscale.cfg` now has all 43 mod model dirs (see
+  Sizes). `size_check.sh` / `.ps1`: every model at 100 % and at its size next to a Kyle npc on one
+  contact sheet. `g_modelScaleRange` defaults to `"20 200"` (Grogu is 22 %).
+- Tested: the size sheet (32 distinct meshes), MP and SP as Grogu 22 % / Yoda 33 % / Grievous from
+  the cfg (moving, jumping, crouching, no MP prediction misses), `/modelscale 19` clamped to 20, a
+  grow refused next to the Kyle npc (correct: the bigger box would start inside it).
 
 ## Next
 
-1. Step 8, sizes for every mod: measure each model's standing height against Kyle at scale 100
-   (same map spot, pose and camera; not SP `t1_surprise`'s start spot), fill
-   `tools/player_mods/base/modelscale.cfg`, show the user the table with screenshots side by side
-   and adjust; the open question from the Sizes table (babyyoda 0.37 `.npc` vs the cfg's 0.5).
-2. Then step 9 (final pass, README section).
-3. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
+1. Step 9, the final pass: the full matrix in SP and MP with the default `modelscale.cfg`,
+   `/modelscale` at the range ends, a fork server with a retail-protocol client (and the other way
+   round) if one is available, the throwaway home cleaned; a "Player mods" section in the fork's
+   `README.md` (install script, cvars, commands, `modelscale.cfg`, `g_customSkeletons`, the tools).
+2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
    screenshots, `inventory.py` knowing the override recipes, the ui model preview showing the scale
-   (optional).
+   (optional); `size_check.ps1` untested (no PowerShell here).
 
 ## Waiting for the user
 
@@ -56,7 +64,7 @@ Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
 | 5 | SP model scale | done (run 4) |
 | 6 | Custom skeletons in MP (T_Yoda) | done (run 5) |
 | 7 | Menus | done (run 6) |
-| 8 | Sizes for every mod | todo |
+| 8 | Sizes for every mod | done (run 6) |
 | 9 | Final pass, README section | todo |
 
 ## Build
@@ -114,6 +122,11 @@ prints the equivalent shell commands.
   `sp_menu_check.sh --hilts`: one more Next click, the SP saber menu's single hilt names.
   `mp_menu_check.sh --species`: the MP custom character menu (`ui_openmenu ingame_player2`), one
   click on its species button per species (the item does not follow `ui_char_model` while open).
+- `measure_heights.py` (`python3 -I`): each model's LOD 0 base-pose height (drawn surfaces, the
+  copy the engine loads) against Kyle's; `--target heights.txt` proposes `modelscale.cfg` factors,
+  `--sizes` prints `<model> <percent>` (the proposal or `--cfg <file>`), `--json`, `--all`.
+- `size_check.sh` / `.ps1`: every model at 100 % and at its size (proposal or `--cfg`) next to a
+  Kyle npc, side camera at a fixed distance, one contact sheet; no GUI input. `.ps1` untested.
 
 Testing notes (learned the hard way):
 
@@ -263,32 +276,43 @@ Other findings:
 
 ## Sizes
 
-Not measured yet (step 8). The default `tools/player_mods/base/modelscale.cfg` holds the starting
-points marked "cfg"; the `.npc` values apply to npcs only where the cfg has no entry. Not approved.
+Approved by the user on 2026-11-26 ("in-universe" for every model). Every humanoid model stands as
+tall as Kyle at 1.0 (`measure_heights.py`: base-pose mesh heights within 4 % of Kyle's; Yoda meshes
++7 to +11 %), so: scale = target height / 1.80 m (Kyle) / mesh ratio. Targets in
+`tools/player_mods/heights.txt` (commonly quoted character or actor heights); the factors in
+`tools/player_mods/base/modelscale.cfg`. Players and bots get these; npcs keep their own `.npc`
+scale where they have one (T_yoda 45, yodavm 50, babyyoda 37, grievous 135, the Vaders 120,
+kyloren 120, Darth_Malgus 115).
 
-| Model | Scale | Source | In cfg | Approved |
-| --- | --- | --- | --- | --- |
-| chewbacca | 1.18 | JA++ `modelscale.cfg` | yes | no |
-| desann | 1.15 | JA++ | yes | no |
-| jan | 0.94 | JA++ | yes | no |
-| jawa | 0.8 | JA++ | yes | no |
-| monmothma | 0.84 | JA++ | yes | no |
-| tavion, tavion_new | 0.95 | JA++ | yes | no |
-| yoda, yodavm, babyyoda | 0.5 | `japp.diff` | yes | no |
-| yodavm (npc yodavm / yodaoz / yodaepit / yodapack) | 0.50 | `.npc` | (yodavm) | no |
-| babyyoda (npc babyyoda) | 0.37 | `.npc`; the cfg's `japp.diff` 0.5 wins over it for now - ask in step 8 | 0.5 | no |
-| t_yoda, t_yoda_mp (npc T_yoda) | 0.45 | `.npc` | yes | no |
-| grievous (npc greeveevm / playergreevee) | 1.35 | `.npc` | yes | no |
-| psdarthmalgus (npc Darth_Malgus) | 1.15 | `.npc` | yes | no |
-| t_vader (npc T_vader*) | 1.20 | `.npc` | yes | no |
-| kylo_ren (npc kyloren) | 1.20 | `.npc` | yes | no |
-| vadervmm (npc vadervmm / vadersingle) | 1.20 | `.npc` | yes | no |
+| Model(s) | Target | Scale |
+| --- | --- | --- |
+| hs_anakin, hs_anakin2, anakinvm, jedi_anakin, jedi_anakint / hs_anakin_e2 / t_anakin | 1.85 m | 1.02 / 1.01 / 1.04 |
+| anavader / jedi_vader, t_vader / vadervmm | 2.02 m | 1.12 / 1.08 / 1.11 |
+| yodavm, yodaflee / t_yoda, t_yoda_mp | 0.66 m | 0.33 / 0.34 |
+| babyyoda (Grogu) | 0.41 m | 0.22 |
+| hs_kenobi_rots, jedi_kenobi | 1.82 m | 1.01 |
+| quigon | 1.93 m | 1.07 |
+| t_luke_rotj, luke_trainer / jedi_luke / luke_bobble | 1.72 m | 0.95 / 0.94 / 0.88 |
+| jtempleg (no canon height) | 1.85 m | 1.01 |
+| swtorrevan | 1.83 m | 1.01 |
+| hs_dooku | 1.93 m | 1.07 |
+| sid | 1.73 m | 0.97 |
+| dt_maul | 1.75 m | 0.97 |
+| psdarthmalgus (no canon height; its `.npc` 115) | 2.07 m | 1.17 |
+| kylo, kylorenk / kylo_ren | 1.89 m | 1.04 / 1.06 |
+| grievous | 2.16 m | 1.23 |
+| st_rey, jedi_st_rey | 1.70 m | 0.95 |
+| st_finn, jedi_st_finn | 1.78 m | 1.00 |
+| st_poe / jedi_st_poe | 1.73 m | 0.97 / 0.96 |
+| cloneii / dt_stormtrooper_ep7 | 1.83 m | 1.01 / 1.02 |
+| dindjarin / dindjarin_gp | 1.85 m | 1.01 / 0.99 |
+| JA++ stock entries (chewbacca 1.18, desann 1.15, jan 0.94, jawa 0.8, monmothma 0.84, tavion(_new) 0.95), `japp.diff` yoda 0.5 | - | kept |
 
 ## Decisions
 
 - Model scale names (run 3): cvars `g_modelScale` (default 1, serverinfo, archived),
-  `g_modelScaleCmd` (default 1, as in `japp.diff`), `g_modelScaleRange` (default `"30 200"`:
-  Grogu to past Grievous; hard limits 10-250, 250 keeping the stand view height inside
+  `g_modelScaleCmd` (default 1, as in `japp.diff`), `g_modelScaleRange` (default `"30 200"`, `"20 200"` since run 6 for
+  Grogu's 22 %: Grogu to past Grievous; the range only clamps the command; hard limits 10-250, 250 keeping the stand view height inside
   `ps.viewheight`'s signed 8 bits), cgame `cg_thirdPersonModelScale` (default 1); commands
   `/modelscale [n|default]` (`0` also resets), `modelscale <client> <n|default>` and `modelscales`
   on the server console / rcon. On a listen server `modelscale <n>` (one argument) goes on to the
@@ -531,4 +555,11 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
 - `9d542600` `[Tools] player mods: menu names the mods do not ship, in the override pk3` - tools
   and override data only; nothing to port (the pk3 is data).
 - `9fc0eb0e` `[Tools] player mods: sp_menu_check.sh --hilts ...` - tools only.
-- (this commit) `[Tools] player mods: ledger run 6` - `PLAYER_MODS_STATUS.md`.
+- `651a502a` `[Tools] player mods: ledger run 6` - `PLAYER_MODS_STATUS.md`.
+- `499214b5` `[Tools] player mods: model heights and an in-game size check` - tools only
+  (`measure_heights.py`, `heights.txt`, `size_check.sh` / `.ps1`).
+- `d4c15c70` `[Shared] player mods: /modelscale may go down to 20 %` - `MODELSCALE_RANGE_DEFAULT`
+  `"20 200"` in `shared/qcommon/q_modelscale.h` (both games' `g_modelScaleRange` default).
+- `dcb159cb` `[Tools] player mods: in-universe sizes for every mod model in modelscale.cfg` - the
+  default `tools/player_mods/base/modelscale.cfg` only (data; `//` comments after values).
+- (this commit) `[Tools] player mods: ledger run 6, step 8` - `PLAYER_MODS_STATUS.md`.
