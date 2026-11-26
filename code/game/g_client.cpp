@@ -2025,8 +2025,10 @@ void G_ChangePlayerModel( gentity_t *ent, const char *newModel )
 		if ( NPC_ParseParms( ent->NPC_type, ent ) )
 		{
 			G_AddWeaponModels( ent );
-			NPC_SetAnim( ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL|SETANIM_FLAG_RESTART );
-			NPC_SetAnim( ent, SETANIM_TORSO, ent->client->ps.torsoAnim, SETANIM_FLAG_NORMAL|SETANIM_FLAG_RESTART );
+			// player mods: OVERRIDE - the new model has no anim yet, and a running anim timer (an idle
+			// fidget, a taunt) would otherwise leave it in its bind pose until the timer runs out
+			NPC_SetAnim( ent, SETANIM_LEGS, ent->client->ps.legsAnim, SETANIM_FLAG_NORMAL|SETANIM_FLAG_RESTART|SETANIM_FLAG_OVERRIDE );
+			NPC_SetAnim( ent, SETANIM_TORSO, ent->client->ps.torsoAnim, SETANIM_FLAG_NORMAL|SETANIM_FLAG_RESTART|SETANIM_FLAG_OVERRIDE );
 			ClientUserinfoChanged( ent->s.number );
 			//Ugh, kind of a hack for now:
 			if ( ent->client->NPC_class == CLASS_BOBAFETT
