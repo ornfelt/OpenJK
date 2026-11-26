@@ -6,58 +6,60 @@ model size (JA++-style, built in). Tools in `tools/player_mods/`.
 
 ## Last run
 
-2026-11-26 (run 6, Linux): steps 7 (menus) and 8 (sizes) done.
+2026-11-26 (run 7, Linux): step 9, the final pass - done. The work is finished; later runs only
+handle new mods in `players/` or what the user asks for.
 
-- MP player model grid rechecked (`mp_menu_check.sh`, all 17 pages this time): every mod skin that
-  ships an `icon_<skin>` is listed. Skins without an icon are not in the grid (stock MP UI rule)
-  and stay reachable with `model <dir>/<skin>`: `anakinvm`, `anavader`, `luke_bobble`, `t_yoda`,
-  and some skins of `hs_anakin`, `hs_anakin2`, `hs_anakin_e2`, `hs_dooku`, `hs_kenobi_rots`,
-  `swtorrevan`, `t_luke_rotj` (n/a: the mods ship no icon for them).
-- Found and fixed: with every mod installed the `.npc` file name list (2048 bytes, SP and MP)
-  overflowed - 147 names, 2049 bytes - so the stock `z-95.npc` was never loaded (MP `npc spawn
-  vehicle Z-95`: "Couldn't spawn NPC z-95"). Raised to 16384, and the MP ui model grid's dir list
-  (1914 of 2048 bytes in use) with it.
-- The user chose (2026-11-26) menu names through the override pk3: a partial `MENUS.str` names
-  `kylo` "Kylo Ren", `kylo_ren` "Kylo Ren (TFA)", `psdarthmalgus` "Darth Malgus", `swtorrevan`
-  "Revan", the Malgus SP hilt "Darth Malgus", and tags the two Anakins "Anakin (HapSlash)" /
-  "Anakin (Toshi)" (shortened from "Anakin Skywalker (...)", which ran past the SP species box).
-- New checks: `mp_menu_check.sh --species` (the MP custom character menu, `ui_openmenu
-  ingame_player2` plus clicks on its species button) and `sp_menu_check.sh --hilts` (the SP saber
-  menu's single hilts). The MP custom character species names are now seen on screen.
-- Tested: SP character menu (18 species), MP custom character menu (all 12 mod species; the run
-  stopped after 14 entries when the window lost focus, the rest are stock), SP saber hilts (9
-  stock + Malgus), MP `npc spawn vehicle Z-95`, SP finding `Z-95`, the names file with LF line
-  endings as git stores it.
-- Step 8: `measure_heights.py` reads every model's LOD 0 base-pose height: every humanoid mod model
-  is Kyle's height within 4 % (one shared skeleton), the Yoda meshes ~10 % above (ears) - so a
-  model's size is a choice, in-universe height / Kyle's 1.80 m (`heights.txt`). The user chose
-  in-universe sizes (2026-11-26); the default `modelscale.cfg` now has all 43 mod model dirs (see
-  Sizes). `size_check.sh` / `.ps1`: every model at 100 % and at its size next to a Kyle npc on one
-  contact sheet. `g_modelScaleRange` defaults to `"20 200"` (Grogu is 22 %).
-- Tested: the size sheet (32 distinct meshes), MP and SP as Grogu 22 % / Yoda 33 % / Grievous from
-  the cfg (moving, jumping, crouching, no MP prediction misses), `/modelscale 19` clamped to 20, a
-  grow refused next to the Kyle npc (correct: the bigger box would start inside it).
+- The inventory is unchanged (26 mods, 35 pk3s). Full matrix again with every fix and the default
+  `modelscale.cfg`: 31 MP bots (dedicated, no new error lines), 146 MP model skins, 76 MP npcs, 76
+  SP npcs and `playermodel`s (screenshots of each). Every cell still holds; see the matrix notes.
+- Found and fixed: SP `playermodel` left the new model in its bind pose (the "T-pose" leftover)
+  while an anim timer ran - `G_ChangePlayerModel` re-set the current anim without
+  `SETANIM_FLAG_OVERRIDE`. Stock bug (also with stock npcs); after the fix the SP pass has no
+  T-pose left. The one remaining odd pose, a stormtrooper holding Maul's staff level, is stock
+  behaviour (`RebornMasterStaff` then `stormtrooper` does the same; `saberattackcycle` ends it).
+- The MP npc check is visual now: `inventory.py --test-cfg mp-npcs` kills each npc before the next
+  and looks from the side with `notarget` (before, npcs piled up, fought and killed the player).
+- New finding: T_AnaVader's `t_anakin` / `t_vader` sabers name hilt models
+  (`saber_anakinEp3`, `saber_VaderEp5`) that it does not ship and its readme does not mention.
+- `/modelscale` at the range ends, MP and SP: 19 -> 20, 250 -> 200 (MP grows to a -30..30 x
+  -24..104 box, view height 96; SP under the t1_surprise ledge refuses 200 % for lack of room, as
+  designed), `default` resets, moving / jumping / crouching at both ends without a prediction miss;
+  SP save at 60 %, `default`, load: 60 % again. The override models `babyyoda` and `dindjarin_gp`
+  load as MP player models.
+- Interop (`interop_check.sh`, new) with the stock OpenJK build in the install dir (OpenJK
+  "latest" of 2025-12-26, retail protocol, its own base modules - proven loaded): a stock client on
+  the fork server sees and plays scaled players (Grievous 123 % from the cfg, `/modelscale 50`
+  handled by the fork server, `rcon modelscales`), its camera stays at the standard height, one
+  prediction miss at the join (spawn) and at most a sub-unit one later; `t_yoda` is refused by the
+  stock cgame ("unsupported multiplayer model") and drawn as Kyle. A fork client on the stock
+  server: no scaling, "Unknown command modelscale", `t_yoda` falls back to Kyle (no
+  `g_customSkeletons` key), the same single join miss. Both directions exit cleanly.
+- Without mods SP, MP (`g_modelScale 0`) and the dedicated server start, load a map and quit
+  cleanly (the only new log line is the `modelscale.cfg` file probe).
+- README: a "Player mods (this fork)" section (install script, cvars, commands, `modelscale.cfg`,
+  precedence, tools). Throwaway homes removed (`/tmp` had filled up mid-run with them).
 
 ## Next
 
-1. Step 9, the final pass: the full matrix in SP and MP with the default `modelscale.cfg`,
-   `/modelscale` at the range ends, a fork server with a retail-protocol client (and the other way
-   round) if one is available, the throwaway home cleaned; a "Player mods" section in the fork's
-   `README.md` (install script, cvars, commands, `modelscale.cfg`, `g_customSkeletons`, the tools).
-2. Small leftovers, when convenient: the SP `playermodel` T-pose, Revan's ghost skins, the MP npc
-   screenshots, `inventory.py` knowing the override recipes, the ui model preview showing the scale
-   (optional); `size_check.ps1` untested (no PowerShell here).
+Nothing - the steps are done. A later run: re-run `inventory.py` for new mods in `players/` (then
+install, matrix rows, a size in `modelscale.cfg`), or what the user asks. Optional leftovers, only
+on request: the ui model preview showing the scale, Revan's ghost skins not looking translucent,
+`inventory.py` reading the override recipes, an override for T_AnaVader's missing hilts (see
+Waiting for the user), the untested `.ps1` scripts on Windows.
 
 ## Waiting for the user
 
-Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
+Nothing required. One optional choice (2026-11-26): T_AnaVader's `t_anakin` / `t_vader` sabers
+name hilts no installed mod ships, so its npcs and `saber t_anakin` show no hilt. Recommended:
+leave it (the mod is used as shipped; install the hilt mod if found). Alternative: an override
+recipe pointing the two `.sab` files at its own or a stock hilt.
 
 ## Steps
 
 | # | Step | Status |
 | --- | --- | --- |
 | 0 | Setup: ledger, build, inventory, install script, mod table | done |
-| 1 | Baseline matrix with the unchanged build | done (the MP npc screenshots are a leftover, see Next) |
+| 1 | Baseline matrix with the unchanged build | done (the MP npc screenshots too, run 7) |
 | 2 | Loading fixes (limits, SP string merge, conflicts, ...) | done: `.npc` brace repair, SP playermodel recursion, string file merge + species fallback, override pk3 for the clashes, MP shader stray brace, MP `sounds.cfg` |
 | 3 | MP model scale - game | done (run 3) |
 | 4 | MP model scale - cgame and ui | done (run 3); the ui model preview does not show the scale (optional, left) |
@@ -65,7 +67,7 @@ Nothing (the stock npc question was answered on 2026-11-25, see Decisions).
 | 6 | Custom skeletons in MP (T_Yoda) | done (run 5) |
 | 7 | Menus | done (run 6) |
 | 8 | Sizes for every mod | done (run 6) |
-| 9 | Final pass, README section | todo |
+| 9 | Final pass, README section | done (run 7) |
 
 ## Build
 
@@ -127,6 +129,12 @@ prints the equivalent shell commands.
   `--sizes` prints `<model> <percent>` (the proposal or `--cfg <file>`), `--json`, `--all`.
 - `size_check.sh` / `.ps1`: every model at 100 % and at its size (proposal or `--cfg`) next to a
   Kyle npc, side camera at a fixed distance, one contact sheet; no GUI input. `.ps1` untested.
+- `interop_check.sh` / `.ps1`: `fork-server` (the fork's dedicated server and the install's stock
+  client), `stock-server` (the install's stock dedicated server and the fork's client) or `both`;
+  each side its own home with the mods, port 29170 on 127.0.0.1, `rcon quit` at the end; prints
+  which modules were loaded (LD_DEBUG "calling init"), the client's prediction misses and error
+  lines, a contact sheet. Needs a display. `.ps1` untested.
+- `run_test.sh --set <cvar> <value>` (`run_test.ps1 -Set @{...}`): extra `+set`s before the cfg.
 
 Testing notes (learned the hard way):
 
@@ -142,6 +150,11 @@ Testing notes (learned the hard way):
 - The MP server gives every client the shared Kyle ghoul2 (`d_perPlayerGhoul2 0`), so a client
   model is only checked by the client (cgame falls back to Kyle silently: screenshots needed).
 - Some log lines carry the timestamp twice; the scanners strip repeats.
+- Never edit a script while a run of it is going: bash reads scripts as it goes (run 7 lost a
+  run that way).
+- The throwaway homes hold a copy of every mod (~300 MB each) and `/tmp` is a small tmpfs: remove
+  them after a pass, or put them under `~/.cache`.
+- MP `npc spawn` is a client command: the `mp-npcs` cfg needs `run_test.sh mp`, not `ded`.
 
 ## Mods
 
@@ -211,10 +224,13 @@ Readme claims and choices:
 ## Compatibility matrix
 
 Cells: `ok`, `broken: <what>`, `n/a` (the mod does not support it), `todo` (not checked yet).
-Checked on Linux, 2026-11-25, with the unchanged build (fork `0eb6dfb7`) and all mods installed.
+Checked on Linux, 2026-11-25, with the unchanged build (fork `0eb6dfb7`) and all mods installed;
+rechecked on Linux 2026-11-26 (run 7, fork `ecae7a49`) with every fix and the default
+`modelscale.cfg`: every SP, MP model, MP bot and MP npc cell below as written.
 
 Fixes referred to: fix1 `.npc` brace repair (run 1), fix2 string file merge + species name fallback,
-fix3 stray `}` in MP shader files, fix4 `sounds.cfg` sound dir (run 2); "override" = the override pk3.
+fix3 stray `}` in MP shader files, fix4 `sounds.cfg` sound dir (run 2), fix5 SP `playermodel` anim
+override (run 7); "override" = the override pk3.
 "ok (listed)" in MP menu: the model's icons are in the MP player model grid (`mp_menu_check.sh`
 contact sheet, 2026-11-25, rechecked 2026-11-26 with all 17 pages). SP menu names rechecked
 2026-11-26 (`sp_menu_check.sh`, MP custom character menu `mp_menu_check.sh --species`: the same
@@ -224,9 +240,9 @@ Columns: SP playermodel (`playermodel <npc>`), SP menu (character creation), SP 
 (`npc spawn`), MP model (`model <m>/<skin>`, every skin, screenshots), MP menu, MP bot (`addbot`,
 dedicated server), MP npc (`npc spawn`), saber, sounds. "fix1" = with this run's `.npc` brace
 repair (the baseline had every npc / playermodel cell after the Qui-Gon file broken, see Decisions).
-MP npc cells are checked by the log (spawned or not); their screenshots were taken from the wrong
-side (fixed in the cfg generator) - the visual MP npc check is still todo. SP cells: log plus
-screenshots of the player after `playermodel` (front view, npcs killed first).
+MP npc cells: log plus screenshots since run 7 (one npc at a time, side view). SP cells: log plus
+screenshots of the player after `playermodel` (front view, npcs killed first); since run 7 no
+`playermodel` T-pose (fix5).
 
 | Mod | SP playermodel | SP menu | SP npc | MP model | MP menu | MP bot | MP npc | Saber | Sounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -234,9 +250,9 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | BabyYoda | ok via override: `babyyoda`, npc scale 37 | n/a | ok via override | ok via override: `babyyoda` (Grogu); `yodavm` stays YodaVM's | ok (listed) | ok via override: "Baby Yoda" | ok via override (log) | its `yoda.sab` = YodaVM's | = yodavm's |
 | darth_sidious | ok (fix1) | n/a | ok (fix1) | ok, 2 skins | ok (listed) | n/a (no `.bot`, readme says bots) | ok (fix1) | stock | ok |
 | DinDjarin | ok via override: `dindjarin_gp` | n/a | ok via override | ok via override: `dindjarin_gp` (GustavoPredador's, caped) | ok (listed) | n/a | ok via override (log) | n/a | ok (`boba`) |
-| DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | todo | ok |
+| DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (red single and staff, SP shots) | ok |
 | DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | stock | ok |
-| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins; 135 % from `modelscale.cfg` since run 3 | ok (listed) | ok | ok (fix1) | todo | ok |
+| grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins; 123 % from `modelscale.cfg` since run 6 | ok (listed) | ok | ok (fix1) | ok (`greeveeb` / `greeveeg`, SP shots) | ok |
 | hs_anakin | ok (fix1) | ok (fix2, names): "Anakin (HapSlash)" | ok (fix1) | ok, all 6 model dirs (`anakinvm`, `anavader` have no icons: not in the menu) | ok (listed) | ok | ok (fix1) | broken: npcs name saber `hs_anakin`, not defined | ok |
 | hs_dookuja | ok (fix1) | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (`.sab` typos `saberOn`, `munberBlades` ignored) | ok |
 | hs_kenobi_rots | ok (fix1) | ok (fix2): "Obi-Wan Kenobi" | ok (fix1) | ok, 6 skins (`jedi_kenobi` untextured if forced) | ok (listed) | ok | ok (fix1) | ok (same `.sab` typos) | ok |
@@ -247,11 +263,11 @@ screenshots of the player after `playermodel` (front view, npcs killed first).
 | ST_Finn_Poe_V2.1 | ok (fix1) | ok (fix2): "Finn", "Poe Dameron" | ok (fix1) | ok, 10 skins (`jedi_st_*` untextured if forced) | ok (listed) | ok | ok | stock | ok |
 | ST_REY_V2.3 | ok (fix1) | ok (fix2): "Rey" | ok (fix1) | ok, 6 skins | ok (listed) | ok | ok | stock | ok |
 | SWTORRevanV1-04 | ok (fix1) | ok (names): "Revan" | ok (fix1) | ok, 15 skins; its shader file loads since fix3 (stray `}` blanked); the ghost skins do not look translucent - todo | ok (listed) | ok | ok | broken: npc saber `revan` not defined | partial set |
-| T_Anavader | ok (fix1) | ok (fix2, names): "Anakin (Toshi)", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | ok | ok |
+| T_Anavader | ok (fix1) | ok (fix2, names): "Anakin (Toshi)", "Darth Vader" | ok (fix1) | ok, 12 skins | ok (listed) | ok | ok | broken: `t_anakin` / `t_vader` name hilts `saber_anakinEp3` / `saber_VaderEp5`, not shipped (run 7) | ok |
 | T_luke_rotj_V2 | ok (fix1) | ok (fix2): "Luke ROTJ" | ok (fix1) | ok, 9 skins | ok (listed) | ok | ok | ok | ok |
-| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 45 % from `modelscale.cfg` since run 3; `t_yoda` (SP glm, own `.gla`): ok on its own skeleton since run 5 (`g_customSkeletons`), Kyle before | ok (`t_yoda_mp` listed) | ok | ok | todo | ok |
+| T_Yoda | ok (fix1): own `.gla`, npc scale 45 | n/a | ok (fix1) | `t_yoda_mp`: ok, 34 % from `modelscale.cfg` since run 6; `t_yoda` (SP glm, own `.gla`): ok on its own skeleton since run 5 (`g_customSkeletons`), Kyle before | ok (`t_yoda_mp` listed) | ok | ok | ok (short green blade, SP shot swinging) | ok |
 | themando_doughnuts | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok | ok | n/a | ok since fix4 (`sound/chars/themando`) |
-| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins; 120 % since run 3 | ok (listed) | ok | ok | todo | ok |
+| vaderepiii | ok (fix1), scale 120 | n/a | ok (fix1) | ok, 3 skins; 111 % since run 6 | ok (listed) | ok | ok | ok (`vadervmm`, SP shots) | ok |
 | yodavm | ok (fix1), scale 50 | n/a | ok (fix1) | ok, 6 skins incl. `yodaflee`; `yodavm` 50 % since run 3 (`yodaflee` has no entry) | ok (listed) | ok | ok | ok | ok |
 | zKyloRenKv2 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | ok via override: "Kylo Ren K" | ok | broken: `kylo_ren` not installed (needs jkhub 2214) | ok |
 | ZZ- Luke Skywalker Trainer v1.5 | ok (fix1), 3 skins | n/a | ok (fix1) | ok, 3 skins | ok (listed) | n/a | ok | stock | ok |
@@ -269,10 +285,11 @@ Other findings:
   (seen on screen in run 6).
 - SP `t1_surprise`'s start spot hides a small player behind a rock ledge in the front view (YodaVM
   at 50 % is out of sight with or without model scaling): take the step 8 shots elsewhere.
-- SP `playermodel`: several shots taken ~1.7 s after the switch show the new model in a T-pose
-  (greeveevm, DT_StormTrooper_EP7, st_rey_scavenger, T_vader*, Luke_robeup / robedn / bobble,
-  KyloRenK, JediTempleGuard) while other npcs of the same model animate. Timing or a missing
-  animation after `G_ChangePlayerModel`? To check before calling those cells ok for good.
+- SP `playermodel` T-pose (run 7, fix5): the new model stood in its bind pose for seconds when an
+  anim timer was running at the switch (`G_ChangePlayerModel` without `SETANIM_FLAG_OVERRIDE`);
+  fixed. A model switched to from a staff saber user (DT_StormTrooper_EP7 after DT_Maul_robed)
+  holds the staff level with its arms out: stock behaviour (`RebornMasterStaff` -> `stormtrooper`
+  without mods), `saberattackcycle` ends it - left as is.
 
 ## Sizes
 
@@ -425,6 +442,14 @@ kyloren 120, Darth_Malgus 115).
   partial `MENUS.str`, no `needs`), see Last run run 6. Skins without an `icon_<skin>` stay out of
   the MP grid (the mods ship none; no generated icons).
 
+- SP `playermodel` (run 7): `G_ChangePlayerModel` re-applies the current legs / torso anim with
+  `SETANIM_FLAG_OVERRIDE` - the new ghoul2 model has no anim yet, so a running anim timer must not
+  keep it from getting one. Stock bug, fixed because every mod `playermodel` showed it.
+- Interop (run 7): checked against the stock OpenJK build of 2025-12-26 in both directions
+  (`interop_check.sh`), as the Decisions above predict: scaled players are drawn by any cgame, only
+  the fork's predicts the scaled box; a stock cgame refuses `t_yoda`. A retail `jamp.exe` (Windows)
+  was not available.
+
 - Default variants: SWTOR Revan full version, Luke Trainer `(Trainer)`; T_Yoda's loose copy
   ignored, its `Yoda.cfg` installed (`player_mods.conf`).
 - Stock overrides (SP hilts 1-3, `ui/saber.menu`, `MENUS.str`, `luke.npc`, force push / pull
@@ -562,4 +587,11 @@ One line per commit of this skill: hash, subject, files, what the Rust port must
   `"20 200"` in `shared/qcommon/q_modelscale.h` (both games' `g_modelScaleRange` default).
 - `dcb159cb` `[Tools] player mods: in-universe sizes for every mod model in modelscale.cfg` - the
   default `tools/player_mods/base/modelscale.cfg` only (data; `//` comments after values).
-- (this commit) `[Tools] player mods: ledger run 6, step 8` - `PLAYER_MODS_STATUS.md`.
+- `d877ef09` `[Tools] player mods: ledger run 6, step 8` - `PLAYER_MODS_STATUS.md`.
+- `ecae7a49` `[SP] player mods: playermodel no longer leaves the new model in its bind pose` -
+  `code/game/g_client.cpp` `G_ChangePlayerModel`: the two `NPC_SetAnim` calls after
+  `G_AddWeaponModels` get `SETANIM_FLAG_OVERRIDE` added. The Rust port: the same flag there.
+- `d8db5e27` `[Tools] player mods: interop check against a stock OpenJK, MP npc checks one at a
+  time` - tools only; nothing to port.
+- (this commit) `[Tools] player mods: README section, ledger run 7, step 9` - `README.md` (docs:
+  the Rust port's README may want the same section), `PLAYER_MODS_STATUS.md`.

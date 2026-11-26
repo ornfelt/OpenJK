@@ -60,6 +60,71 @@ If you have the Mac App Store Version of Jedi Academy, follow these steps to get
 1. Run `OpenJK.app` or `OpenJK SP.app`
 1. Savegames, Config Files and Log Files are stored in `/Users/$USER/Library/Application Support/OpenJK/`
 
+## Player mods (this fork)
+
+This fork loads Jedi Academy player model mods (made for retail, JA+ or JA++) in SP and MP and
+makes the player model size configurable, JA++-style but built into the game code (no Lua).
+Without mods and with `g_modelScale 0` the game behaves as stock OpenJK; the network protocol, the
+module ABI and the SP savegame format are unchanged. The status, every decision and the tested
+mods are in [PLAYER_MODS_STATUS.md](PLAYER_MODS_STATUS.md).
+
+### Installing the mods
+
+`tools/player_mods/install_player_mods.sh` (bash) or `install_player_mods.ps1` (PowerShell)
+copies the mods from a players dir (one dir per mod, default `~/Downloads/star_wars_ja_mods/players`)
+into `base/` of the OpenJK homepath (`~/.local/share/openjk`, `Documents/My Games/OpenJK`):
+
+```sh
+./tools/player_mods/install_player_mods.sh                          # everything
+./tools/player_mods/install_player_mods.sh --exclude BabyYoda       # leave a mod (or mod/pk3) out
+./tools/player_mods/install_player_mods.sh --only T_Yoda,grievousvm # only some
+./tools/player_mods/install_player_mods.sh --dest /tmp/test/base    # another base/ dir
+./tools/player_mods/install_player_mods.sh --uninstall              # remove what it installed
+./tools/player_mods/install_player_mods.sh --debug                  # print the commands only
+```
+
+It picks one variant where a mod ships alternatives (`tools/player_mods/player_mods.conf`), adds
+the default `modelscale.cfg` and `~playermods_overrides.pk3` (built from the mods' own files and
+the recipes in `tools/player_mods/override/`: renamed models / bots and menu names where mods
+clash), lists the pk3s that replace stock files, writes `player_mods_manifest.txt` and never
+overwrites a file it did not install. The mods themselves are never changed.
+
+### Model size
+
+| Cvar | Default | |
+| --- | --- | --- |
+| `g_modelScale` | `1` | scale players, bots and npcs by `modelscale.cfg` / `/modelscale` (MP: serverinfo; the fork's cgame predicts the scaled box only when the server has it on) |
+| `g_modelScaleCmd` | `1` | players may use `/modelscale` |
+| `g_modelScaleRange` | `"20 200"` | percent range `/modelscale` is clamped to (hard limits 10 - 250) |
+| `cg_thirdPersonModelScale` | `1` | the third-person camera's range and height follow the player's scale |
+| `g_customSkeletons` | `1` | MP, latched: player models on a humanoid-compatible custom `.gla` (T_Yoda) use it instead of falling back to Kyle |
+
+Commands:
+
+- `/modelscale [n|default]` - with a number, the own scale in percent (clamped to the range);
+  without one, print it; `default` or `0` goes back to the table. Kept over respawns and model
+  changes (MP until a map change or disconnect, SP in the savegame). SP needs no cheats.
+- `modelscale <client> <n|default>` (MP server console / rcon) - set a client's scale.
+- `modelscales` (server console / rcon, SP console) - list the table and the current scales.
+
+`modelscale.cfg` (in `base/` or a pk3) is JA++'s format, and JA++'s own file loads unchanged:
+whitespace-separated `model scale` pairs, the scale a factor (`0.5` is half size), `model/skin`
+for one skin only, `//` and `/* */` comments. The default one (`tools/player_mods/base/modelscale.cfg`)
+has JA++'s entries plus an in-universe size for every tested mod model.
+
+Precedence for players and bots: `/modelscale`, then `modelscale.cfg`, then the `.npc` file's
+`scale` (SP `playermodel <npc>`), then 100. Npcs keep their own `.npc` scale where they have one,
+else the table's. The bounding box (standing, crouched, dead), the view heights, the saber and hit
+bolts and the camera scale with the model; the saber blade does not.
+
+### Tools
+
+`tools/player_mods/` also holds `inventory.py` (what each mod ships, its overrides and clashes,
+test cfgs), `run_test.sh` (SP / MP / dedicated runs in a throwaway homepath), `log_report.py`,
+`measure_heights.py` and `size_check.sh` (model heights), `sp_menu_check.sh` /
+`mp_menu_check.sh` (menu contact sheets) and `interop_check.sh` (a fork server with a stock
+OpenJK client and the other way round). Each script has a usage block at its top.
+
 ## For Developers
 
 ### Building OpenJK
