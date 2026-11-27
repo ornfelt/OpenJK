@@ -246,9 +246,9 @@ screenshots of the player after `playermodel` (front view, npcs killed first); s
 | Mod | SP playermodel | SP menu | SP npc | MP model | MP menu | MP bot | MP npc | Saber | Sounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ashuras_clones | ok (fix1) | n/a | ok (fix1) | ok, 4 skins | ok (listed) | ok | ok (fix1) | stock | broken: no `sounds.cfg` (generic sounds) |
-| BabyYoda | ok via override: `babyyoda`, npc scale 37 | n/a | ok via override | ok via override: `babyyoda` (Grogu); `yodavm` stays YodaVM's | ok (listed) | ok via override: "Baby Yoda" | ok via override (log) | its `yoda.sab` = YodaVM's | = yodavm's |
+| BabyYoda | ok via override: `babyyoda`, npc scale 37 | n/a | ok via override | ok via override: `babyyoda` (Grogu); `yodavm` stays YodaVM's | ok since 2026-11-27 (first in the grid; missing before: the override pk3 had no dir entries) | ok via override: "Baby Yoda" | ok via override (log) | its `yoda.sab` = YodaVM's | = yodavm's |
 | darth_sidious | ok (fix1) | n/a | ok (fix1) | ok, 2 skins | ok (listed) | n/a (no `.bot`, readme says bots) | ok (fix1) | stock | ok |
-| DinDjarin | ok via override: `dindjarin_gp` | n/a | ok via override | ok via override: `dindjarin_gp` (GustavoPredador's, caped) | ok (listed) | n/a | ok via override (log) | n/a | ok (`boba`) |
+| DinDjarin | ok via override: `dindjarin_gp` | n/a | ok via override | ok via override: `dindjarin_gp` (GustavoPredador's, caped) | ok since 2026-11-27 (missing before, as `babyyoda`) | n/a | ok via override (log) | n/a | ok (`boba`) |
 | DT_Maul | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | ok (red single and staff, SP shots) | ok |
 | DT_Stormie_EP7 | ok (fix1; readme: "SP: No") | n/a | ok (fix1) | ok, 5 skins | ok (listed) | ok | ok (fix1) | stock | ok |
 | grievousvm | ok (fix1), npc scale 135 | n/a | ok (fix1) | ok, 4 skins; 123 % from `modelscale.cfg` since run 6 | ok (listed) | ok | ok (fix1) | ok (`greeveeb` / `greeveeg`, SP shots) | ok |
@@ -273,6 +273,12 @@ screenshots of the player after `playermodel` (front view, npcs killed first); s
 | zzJTempleGv3 | ok (fix1) | n/a | ok (fix1) | ok | ok (listed) | n/a | ok | ok | ok |
 
 Other findings:
+
+- 2026-11-27: the override models `babyyoda` and `dindjarin_gp` were missing from the MP model grid
+  (reported by the user). The engine lists a dir in a pk3 (`FS_GetFileList("models/players", "/")`)
+  only from an explicit dir entry, and `build_overrides.py` wrote file entries only; it now writes
+  an entry for every parent dir. Checked with `mp_menu_check.sh --only BabyYoda,yodavm,T_Yoda`:
+  Grogu is the first icon. The earlier "ok (listed)" for both cells was wrong.
 
 - SP: a level has 64 skin configstrings (`G_FindConfigstringIndex` "overflow adding
   models/players/t_yoda/model_default.skin to set 1097-64" after ~60 different models in one map,

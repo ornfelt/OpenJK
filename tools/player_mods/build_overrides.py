@@ -205,7 +205,14 @@ def build(recipes, players, mods, out_dir, quiet=False):
 		return None
 	os.makedirs(out_dir, exist_ok=True)
 	pk3 = os.path.join(out_dir, OVERRIDE_PK3)
+	# the engine lists a pk3 dir (FS_GetFileList "models/players" "/", the ui's model grid) only
+	# from an explicit dir entry, so every parent dir of a file gets one
+	dirs = {path[:i + 1] for path in files for i, ch in enumerate(path) if ch == "/"}
 	with zipfile.ZipFile(pk3, "w", zipfile.ZIP_DEFLATED) as z:
+		for d in sorted(dirs, key=str.lower):
+			info = zipfile.ZipInfo(d, ZIP_TIME)
+			info.external_attr = (0o40755 << 16) | 0x10
+			z.writestr(info, b"")
 		for path in sorted(files, key=str.lower):
 			info = zipfile.ZipInfo(path, ZIP_TIME)
 			info.compress_type = zipfile.ZIP_DEFLATED
