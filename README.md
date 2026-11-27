@@ -89,6 +89,30 @@ the recipes in `tools/player_mods/override/`: renamed models / bots and menu nam
 clash), lists the pk3s that replace stock files, writes `player_mods_manifest.txt` and never
 overwrites a file it did not install. The mods themselves are never changed.
 
+### Running it
+
+Any OpenJK build loads the installed pk3s (they are in the homepath's `base/`), but the model
+size, the loading fixes, the SP menu names and T_Yoda in MP need this fork's executables **and**
+its game modules. A stock OpenJK (the `latest` release, say) runs the mods the way stock does: no
+scaling, `/modelscale` unknown. Install the fork's build into the game dir, once and after every
+rebuild:
+
+```sh
+cmake --build build
+cmake --install build   # into <CMAKE_INSTALL_PREFIX>/JediAcademy: the exes, renderers and the
+                        # modules in base/ and OpenJK/ (plus JediOutcast/)
+```
+
+This overwrites the OpenJK build already in that dir; copy it elsewhere first if you want to keep
+it (`interop_check.sh --game <copy>` uses a stock build). Then start `openjk.x86_64` (MP) or
+`openjk_sp.x86_64` (SP) from the game dir as usual. No command-line arguments are needed: the
+cvars are on by default and `modelscale.cfg` is read from the homepath's `base/`.
+
+Starting `build/openjk.x86_64` from the build dir is not enough. The game looks for its modules
+in the homepath's `base/` and then the game dir's `base/`, not next to the exe, so it would load
+whatever modules are installed there. In MP the sizes come from the server: you are scaled only
+on a server running this fork (your own listen server, or a fork `openjkded`).
+
 ### Model size
 
 | Cvar | Default | |

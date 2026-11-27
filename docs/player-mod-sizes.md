@@ -9,6 +9,9 @@ three tools, from the most permanent to the most temporary:
 | an npc's `scale` (override recipe) | that npc only | until you edit the recipe again |
 | `/modelscale <percent>` | you (or one client, from the server console) | MP: until a map change or disconnect; SP: kept in the savegame |
 
+All of this needs this fork's build installed in the game dir (`cmake --install build`); a stock
+OpenJK ignores the sizes. See "Running it" in the [README](../README.md#running-it).
+
 Sizes are percent in the game and factors in the file: `0.5` in `modelscale.cfg` is `50` on the
 command line, half of Kyle's height. Every humanoid mod model is about Kyle's height at 1.0, so a
 factor is simply "target height / 1.80 m".
